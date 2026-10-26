@@ -6,6 +6,11 @@ values
   ('11111111-1111-1111-1111-111111111111', 'farmer@example.com', 'Demo Farmer', 'farmer')
 on conflict (id) do nothing;
 
+insert into public.profiles (id, email, full_name, role)
+values
+  ('88888888-8888-8888-8888-888888888888', 'buyer@example.com', 'Demo Buyer Representative', 'buyer')
+on conflict (id) do nothing;
+
 insert into public.farms (id, owner_id, name, county, location)
 values
   ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Kisii Tomato Plot', 'Kisii', 'Kisii County')
@@ -13,7 +18,7 @@ on conflict (id) do nothing;
 
 insert into public.harvests (id, farmer_id, farm_id, crop, quantity, unit, harvest_date, location, status, handling_notes, demo_data)
 values
-  ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Tomato', 220, 'kg', now(), 'Kisii County', 'assessed', 'Demo harvest lot for planning only.', true)
+  ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Tomato', 220, 'kg', now(), 'Kisii County', 'listed', 'Demo harvest lot for planning only.', true)
 on conflict (id) do nothing;
 
 insert into public.facilities (id, name, county, location, type, demo_data)
@@ -28,7 +33,7 @@ on conflict (id) do nothing;
 
 insert into public.buyers (id, profile_id, company_name, location)
 values
-  ('66666666-6666-6666-6666-666666666666', '11111111-1111-1111-1111-111111111111', 'Demo Buyer Cooperative', 'Kisii')
+  ('66666666-6666-6666-6666-666666666666', '88888888-8888-8888-8888-888888888888', 'Demo Buyer Cooperative', 'Kisii')
 on conflict (id) do nothing;
 
 insert into public.offers (id, harvest_id, buyer_id, price_per_kg, status, source)
