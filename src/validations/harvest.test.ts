@@ -14,6 +14,18 @@ describe('harvestSchema', () => {
     expect(result.crop).toBe('Tomato');
   });
 
+  it('accepts additional measurement units', () => {
+    const result = harvestSchema.parse({
+      crop: 'Maize',
+      quantity: 15,
+      unit: 'bag',
+      harvestDate: '2026-10-26T08:00:00+03:00',
+      location: 'Nyamira County',
+    });
+
+    expect(result.unit).toBe('bag');
+  });
+
   it('rejects invalid quantity', () => {
     expect(() =>
       harvestSchema.parse({

@@ -24,7 +24,7 @@ create table if not exists public.harvests (
   farm_id uuid references public.farms(id),
   crop text not null,
   quantity numeric(10,2) not null check (quantity > 0),
-  unit text not null check (unit in ('kg', 'crate', 'bucket', 'box')),
+  unit text not null check (unit in ('kg', 'g', 'tonne', 'litre', 'bag', 'sack', 'crate', 'bucket', 'box', 'carton', 'bunch', 'piece', 'head', 'dozen', 'bale')),
   harvest_date timestamptz not null,
   location text not null,
   status text not null check (status in ('draft', 'submitted', 'assessed', 'listed', 'sold', 'cancelled')) default 'draft',

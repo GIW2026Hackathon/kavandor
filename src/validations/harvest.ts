@@ -1,9 +1,12 @@
 import { z } from 'zod';
+import { HARVEST_UNITS } from '../types';
+
+export const harvestUnitSchema = z.enum(HARVEST_UNITS);
 
 export const harvestSchema = z.object({
   crop: z.string().trim().min(2).max(80),
   quantity: z.number().positive().finite(),
-  unit: z.enum(['kg', 'crate', 'bucket', 'box']),
+  unit: harvestUnitSchema,
   harvestDate: z.string().datetime({ offset: true }),
   location: z.string().trim().min(2).max(150),
   handlingNotes: z.string().max(500).optional(),

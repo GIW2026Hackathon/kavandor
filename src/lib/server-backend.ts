@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { HARVEST_UNITS } from '@/types';
 import { harvestSchema } from '@/validations/harvest';
 import { ApiError } from '@/lib/api-errors';
 import { hasAiConfig, serverEnv } from '@/lib/server-env';
@@ -54,7 +55,7 @@ export async function updateHarvest(supabase: ServerSupabaseClient, actor: AuthC
   const patchSchema = z.object({
     crop: z.string().trim().min(2).max(120).optional(),
     quantity: z.number().positive().finite().optional(),
-    unit: z.enum(['kg', 'crate', 'bucket', 'box']).optional(),
+    unit: z.enum(HARVEST_UNITS).optional(),
     harvestDate: z.string().datetime().optional(),
     location: z.string().trim().min(2).max(240).optional(),
     handlingNotes: z.string().max(2000).nullable().optional(),

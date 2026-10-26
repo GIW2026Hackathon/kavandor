@@ -4,14 +4,30 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Camera, Check, ChevronLeft, ChevronRight, MapPin, Upload } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { HARVEST_UNITS } from '@/types';
 
 const steps = ['Produce', 'Harvest details', 'Location', 'Photos', 'Review'];
 
+const produceGroups = [
+  { label: 'Field crops', options: ['Maize', 'Rice', 'Wheat', 'Barley', 'Sorghum', 'Millet', 'Finger millet', 'Beans', 'Cowpeas', 'Green grams', 'Pigeon peas', 'Soybeans', 'Groundnuts', 'Sunflower', 'Cotton', 'Sugarcane', 'Tobacco'] },
+  { label: 'Horticulture and fruit', options: ['Avocados', 'Bananas', 'Mangoes', 'Oranges', 'Pineapples', 'Passion fruit', 'Papayas', 'Guavas', 'Lemons', 'Tangerines', 'Watermelons', 'Melons', 'Peaches', 'Plums', 'Macadamia', 'Apples', 'Strawberries'] },
+  { label: 'Vegetables and herbs', options: ['Tomatoes', 'Irish potatoes', 'Sweet potatoes', 'Cassava', 'Yams', 'Onions', 'Kale', 'Cabbages', 'Spinach', 'Carrots', 'Broccoli', 'Cauliflower', 'Capsicum', 'Cucumber', 'Eggplant', 'Garlic', 'Ginger', 'Turmeric', 'Chilies', 'Pumpkins', 'Coriander', 'Parsley', 'Basil', 'Rosemary'] },
+  { label: 'Livestock', options: ['Cattle', 'Dairy cattle', 'Beef cattle', 'Goats', 'Sheep', 'Pigs', 'Camels', 'Donkeys', 'Rabbits'] },
+  { label: 'Poultry', options: ['Laying hens', 'Broiler chickens', 'Ducks', 'Turkeys', 'Geese', 'Guinea fowl', 'Quail'] },
+  { label: 'Dairy, eggs and apiary', options: ['Cow milk', 'Goat milk', 'Camel milk', 'Table eggs', 'Hatching eggs', 'Honey', 'Beeswax'] },
+  { label: 'Aquaculture', options: ['Tilapia', 'Catfish', 'Trout', 'Prawns', 'Other fish'] },
+  { label: 'Flowers and nursery', options: ['Cut roses', 'Cut flowers', 'Ornamental foliage', 'Tree seedlings', 'Fruit seedlings', 'Vegetable seedlings', 'Sod and turf'] },
+  { label: 'Forestry and agroforestry', options: ['Timber', 'Firewood', 'Bamboo', 'Eucalyptus', 'Cypress', 'Tree saplings', 'Mushrooms', 'Charcoal'] },
+  { label: 'Processed farm produce', options: ['Coffee beans', 'Tea leaves', 'Dried grains', 'Dried fruit', 'Vegetable oil', 'Raw hides', 'Wool', 'Hay and fodder'] },
+  { label: 'Other', options: ['Other agricultural produce'] },
+];
+
 type HarvestDraft = {
   crop: string;
+  customProduce: string;
   variety: string;
   quantity: string;
-  unit: 'kg' | 'crate' | 'bucket' | 'box';
+  unit: (typeof HARVEST_UNITS)[number];
   harvestDate: string;
   harvestTime: string;
   handlingNotes: string;
@@ -22,6 +38,7 @@ type HarvestDraft = {
 
 const initialDraft: HarvestDraft = {
   crop: 'Tomatoes',
+  customProduce: '',
   variety: 'Roma',
   quantity: '220',
   unit: 'kg',
@@ -46,8 +63,9 @@ export function IntakeWizard() {
   useEffect(() => () => photoPreviews.forEach((preview) => URL.revokeObjectURL(preview)), [photoPreviews]);
 
   const update = (field: keyof HarvestDraft, value: string) => setDraft((current) => ({ ...current, [field]: value }));
+  const produceName = draft.crop === 'Other agricultural produce' ? draft.customProduce.trim() : draft.crop;
   const validate = () => {
-    if (step === 0 && (!draft.crop || Number(draft.quantity) <= 0)) return 'Choose a crop and enter a quantity greater than zero.';
+    if (step === 0 && (!produceName || Number(draft.quantity) <= 0)) return 'Choose a produce type and enter a quantity greater than zero.';
     if (step === 2 && (!draft.location || !draft.county)) return 'Enter the farm or collection point and county.';
     return '';
   };
@@ -67,7 +85,7 @@ export function IntakeWizard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey },
         body: JSON.stringify({
-          crop: draft.crop,
+          crop: produceName,
           variety: draft.variety,
           quantity: Number(draft.quantity),
           harvestDate: new Date(`${draft.harvestDate}T${draft.harvestTime}:00`).toISOString(),
@@ -130,10 +148,14 @@ export function IntakeWizard() {
         {step === 0 && (
           <Fieldset title="What did you harvest?" copy="Start with the essential quantity. Optional details can be added later.">
             <div className="grid gap-5 sm:grid-cols-2">
-              <Select label="Crop" value={draft.crop} onChange={(value) => update('crop', value)} options={['Tomatoes', 'Bananas', 'Avocados', 'Potatoes']} />
-              <Input label="Variety, if known" value={draft.variety} onChange={(value) => update('variety', value)} placeholder="e.g. Roma" />
+              <SelectGroup label="Produce" value={draft.crop} onChange={(value) => update('crop', value)} groups={produceGroups} />
+              {draft.crop === 'Other agricultural produce' ? (
+                <Input label="Agricultural produce name" value={draft.customProduce} onChange={(value) => update('customProduce', value)} placeholder="Enter the exact produce" />
+              ) : (
+                <Input label="Variety or breed, if known" value={draft.variety} onChange={(value) => update('variety', value)} placeholder="e.g. Roma or Friesian" />
+              )}
               <Input label="Quantity" value={draft.quantity} onChange={(value) => update('quantity', value)} type="number" min="0.01" />
-              <Select label="Unit" value={draft.unit} onChange={(value) => update('unit', value)} options={['kg', 'crate', 'bucket', 'box']} />
+              <Select label="Unit" value={draft.unit} onChange={(value) => update('unit', value)} options={[...HARVEST_UNITS]} />
             </div>
           </Fieldset>
         )}
@@ -166,7 +188,7 @@ export function IntakeWizard() {
                 <Camera size={32} className="mx-auto text-[#FF5A1F]" />
                 <span className="mt-3 block text-sm font-bold text-[#17191D]">Open camera or choose photos</span>
                 <span className="mt-1 block text-xs text-[#74767B]">JPG or PNG · up to 5 images</span>
-              </span>
+              </span>produceName
             </label>
             {photos.length > 0 && (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -181,7 +203,7 @@ export function IntakeWizard() {
           <Fieldset title="Review your harvest" copy="Check the summary before submitting. Nothing is sent to buyers automatically.">
             <dl className="divide-y divide-[#E2DED6] border-y border-[#E2DED6]">
               {[
-                ['Produce', `${draft.quantity} ${draft.unit} ${draft.crop}${draft.variety ? ` · ${draft.variety}` : ''}`],
+                ['Produce', `${draft.quantity} ${draft.unit} ${produceName}${draft.variety ? ` · ${draft.variety}` : ''}`],
                 ['Harvested', `${draft.harvestDate} at ${draft.harvestTime}`],
                 ['Location', `${draft.location}, ${draft.county}`],
                 ['Availability', draft.availability],
@@ -243,6 +265,27 @@ function Input({ label, value, onChange, type = 'text', placeholder, min }: { la
   );
 }
 
+
+function SelectGroup({ label, value, onChange, groups }: { label: string; value: string; onChange: (value: string) => void; groups: Array<{ label: string; options: string[] }> }) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-[#17191D]">
+      {label}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 rounded-xl border border-[#E2DED6] bg-white px-3 text-base font-normal text-[#17191D] outline-none transition focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F]"
+      >
+        {groups.map((group) => (
+          <optgroup key={group.label} label={group.label}>
+            {group.options.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </label>
+  );
+}
 function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="grid gap-2 text-sm font-semibold text-[#17191D]">

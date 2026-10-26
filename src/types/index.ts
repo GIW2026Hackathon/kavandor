@@ -9,7 +9,8 @@ export type ApiErrorCode =
   | 'CAPACITY_EXCEEDED'
   | 'AI_UNAVAILABLE';
 
-export type HarvestUnit = 'kg' | 'crate' | 'bucket' | 'box';
+export const HARVEST_UNITS = ['kg', 'g', 'tonne', 'litre', 'bag', 'sack', 'crate', 'bucket', 'box', 'carton', 'bunch', 'piece', 'head', 'dozen', 'bale'] as const;
+export type HarvestUnit = (typeof HARVEST_UNITS)[number];
 export type HarvestStatus = 'draft' | 'submitted' | 'assessed' | 'listed' | 'sold' | 'cancelled';
 export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
 export type ReservationStatus = 'pending' | 'confirmed' | 'released' | 'completed';
