@@ -1,43 +1,51 @@
-# Database schema
+# Supabase database and deployment
 
-KAVANDOR uses Supabase PostgreSQL. The schema is defined in ordered SQL migrations under `supabase/migrations/`; the demo seed is `supabase/seed.sql`.
+The backend uses ordered migrations in `supabase/migrations/`:
 
-## Tables and relationships
+1. `001_initial_schema.sql` creates the core farmer, harvest, marketplace, facility, and transaction tables.
+2. `002_storage_and_mobility.sql` adds facility metadata, capacity windows, storage monitoring, reservations, and transport events.
+3. `003_production_backend.sql` adds marketplace listings, notification/cost records, idempotency keys, constraints, secure RPC workflows, activity triggers, strict row-level security, and the private harvest photo bucket.
 
-The initial migration defines all core tables: `profiles`, `farms`, `harvests`, `harvest_photos`, `assessments`, `facilities`, `capacity_slots`, `reservations`, `transport_jobs`, `buyers`, `offers`, `inventory_batches`, `transactions`, `payment_records`, and `activity_events`.
+The migrations are additive and do not drop business data. Migration 003 adds a capacity-window exclusion constraint; existing overlapping windows must be reviewed and corrected before applying it. Apply and inspect migrations against a non-production project first.
 
-All primary keys are UUIDs. Profile IDs are expected to match the authenticated Supabase user's `auth.uid()`. The current schema intentionally does not create or seed Auth users: the demo profiles are isolated fixtures, and account provisioning must create a profile using the verified Auth user's UUID. Profile roles cannot be changed by an ordinary authenticated client.
+## Identity and authorization
 
-Farmer-owned farms and harvests reference profiles; photos and assessments reference harvests. Buyers reference their own buyer profile, and offers connect buyers to harvests. A reservation references its harvest, facility, and capacity slot. The capacity slot must belong to the same facility. Inventory, transactions, and activity events trace the harvest workflow. Deleting a harvest can cascade to operational data, but transactions and payment records restrict deletion of their financial history; activity events remain if their harvest is deleted.
+- Supabase Auth access tokens/cookies establish identity. API code does not trust caller-supplied `x-user-id` or role headers.
+- A database trigger creates a farmer profile on auth signup; OAuth profile names are read from provider metadata.
+- Role changes are restricted to a trusted SQL administrator or the admin-only `kavandor_admin_assign_role` RPC. Self-service `requested_role` is a request only.
+- To bootstrap the first `operations_admin`, first create/sign in the account, then run this statement in the trusted Supabase SQL editor, replacing the email:
 
-Quantities and KSh prices use fixed-precision numeric values; workflow timestamps use `timestamptz`. Existing status constraints and API status contracts are retained. Additional constraints prevent negative transaction values, over-capacity counters, duplicate transactions for one offer, and multiple accepted offers for one harvest.
+  ```sql
+  update public.profiles
+  set role = 'operations_admin', updated_at = now()
+  where email = 'admin@example.com';
+  ```
 
-## Capacity and workflow integrity
+  Thereafter, use the admin API/RPC to assign farmer, buyer, facility-operator, or transport-provider roles. The app intentionally does not permit self-assignment of an admin role.
+- RLS is enabled across business tables. Multi-write workflows use narrowly granted `SECURITY DEFINER` RPCs with a fixed search path; direct writes to protected business tables are not exposed to regular clients.
 
-Reservation inserts, changes, and deletes maintain `capacity_slots.reserved_kg` in a database trigger. The trigger locks the relevant slot row and rejects a reservation that would exceed capacity, so concurrent reservation transactions cannot both consume the same remaining capacity. Only pending and confirmed reservations count against capacity; released and completed reservations do not. New reservations must reference a slot, while pre-existing rows can remain unassigned until reconciled.
+## Atomic workflows and integrity
 
-Offer acceptance is protected by a partial unique index on accepted offers per harvest. Offer, reservation, and transport-job details cannot be changed after creation, and their status transitions are constrained. Creation and status changes for harvests, reservations, offers, transport jobs, and transactions are written to `activity_events`.
+- Harvest creation, offer creation/acceptance, capacity reservation, transport assignment, assessment persistence, and facility intake validate roles and ownership in SQL.
+- Reservations lock the facility and covering capacity slot before reserving configured kg. Overlapping windows are prohibited; reservation status release/completion decrements reserved capacity.
+- Offer acceptance atomically accepts one pending offer, rejects competing offers, closes the listing, marks the harvest sold, and creates a transaction.
+- Intake records actual quantity in `inventory_batches`, independently of farmer-declared harvest quantity. Matching confirmed reservations are completed in the same transaction. Transaction completion records actual quantity; the API calculates proceeds from actual kg and accepted price/kg.
+- Harvest and transport status triggers reject invalid transitions and persist activity/transport events in the same transaction. Photo metadata is owner-scoped and limited to five photos per harvest; files are stored in a private bucket.
+- Payment entries and transaction costs are manual administrative records. They do not represent an external provider confirmation.
 
-## Row-level security
+## Configuration
 
-RLS is enabled on every core table. Farmers can access their own farms, harvests, photos, and assessments. Buyers can create offers only through their own buyer profile and only for listed harvests; they can read their own offers and transactions. Farmers control offer decisions for their harvests. Facility operators can manage their own facility and capacity slots; only the owning operator can update its reservations. Assigned transport providers can update their own jobs. Participants can read relevant inventory, transaction, payment, and activity records. Assessment, inventory, transaction, payment, and audit writes are reserved for trusted server-side operations. Facilities and capacity availability are readable without authentication for marketplace discovery; their writes remain controlled.
+Copy `.env.example` to `.env.local`.
 
-The current application APIs are development mocks and do not authenticate users or write to Supabase. Before connecting them, implement server-side Auth checks and use the caller's verified UUID; keep service-role credentials server-only. The demo fixture profiles do not correspond to Auth accounts and cannot be used to authenticate through these RLS policies.
+- Required for persistent APIs: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Optional AI: server-only `AI_PROVIDER_API_URL`, `AI_PROVIDER_MODEL`, `AI_PROVIDER_API_KEY`. Without a key, assessment returns a clearly labelled manual fallback with confidence 0.
+- OAuth: configure Google/Facebook credentials and allowed callback URLs in Supabase Auth. Do not put OAuth client secrets or a Supabase service-role key in browser environment variables.
+- `NEXT_PUBLIC_SITE_URL` must match the deployed application origin and be allowlisted for Supabase redirects.
 
-## Local setup and verification
+`supabase/config.toml` configures the local Supabase stack, migration discovery, and `seed.sql`. The seed contains fixed demo-only farmer/buyer/facility/harvest/listing/offer records; these profiles are not Supabase Auth login accounts and the seed contains no default credentials. The seed marks simulated values as demo data and is designed for repeatable local setup.
 
-Install the Supabase CLI and PostgreSQL client (`psql`) separately if they are not already available. These commands use the local Supabase database only; do not link a shared project or point them at production:
+Apply migrations using the Supabase CLI or SQL editor in migration order. Verify that the private `harvest-photos` bucket and policies exist. Provision actual operator/provider/facility records before using partner workflows. Capacity options are available only for explicitly configured future slots.
 
-```powershell
-supabase start
-supabase migration up
-psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/seed.sql
-psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/seed.sql
-supabase test db
-```
+## Local validation
 
-`supabase start` initializes local services if needed. `supabase migration up` applies pending migrations to the local database without resetting it. The two `psql` commands verify the seed can be applied repeatedly; the fixed demo IDs and conflict handling prevent duplicate rows. Database tests are in `supabase/tests/`.
-
-For a configured non-default local database password, replace `postgres` in the connection string with that local password. Do not put service-role keys in these commands or in frontend environment variables.
-
-After applying migrations, regenerate the project's Supabase TypeScript database types before replacing the current mock API contracts. Review generated types and API changes together; no generated types are currently committed.
+`npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` validate application code. After applying the migrations to a disposable local or hosted Supabase database, run the rollback-only database workflow and RLS test with `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/production_backend.sql`. The test creates temporary fixture records inside a transaction and rolls them back. Credentials and a live database are not included in the repository.

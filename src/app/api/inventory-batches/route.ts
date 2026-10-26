@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
+import { readJson } from '@/lib/api-errors';
+import { withAuthenticatedApi } from '@/lib/api-route';
+import { receiveInventory } from '@/lib/server-backend';
 
 export async function POST(request: Request) {
-  const payload = await request.json();
-  return NextResponse.json(
-    {
-      ok: true,
-      inventoryBatch: {
-        id: 'batch-01',
-        harvestId: payload.harvestId ?? 'demo-harvest-001',
-        actualReceivedKg: payload.actualReceivedKg ?? 0,
-        status: 'received',
-      },
-    },
-    { status: 201 },
-  );
+  return withAuthenticatedApi(request, ['facility_operator', 'operations_admin'], async ({ supabase }) => {
+    const batch = await receiveInventory(supabase, await readJson(request));
+    return NextResponse.json({ inventoryBatch: batch }, { status: 201 });
+  });
+}
+
+export async function GET(request: Request) {
+  return withAuthenticatedApi(request, ['farmer', 'facility_operator', 'operations_admin'], async ({ supabase }) => {
+    const { data, error } = await supabase.from('inventory_batches').select('*')
+      .order('received_at', { ascending: false }).limit(100);
+    if (error) throw error;
+    return NextResponse.json({ inventoryBatches: data ?? [] });
+  });
 }
