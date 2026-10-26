@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Bell, Boxes, LayoutDashboard, Leaf, Menu, PackageSearch, Sprout, Store, Warehouse, Truck, BellRing, PackageOpen, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { KavandorLogo } from '@/components/ui/logo';
 
 const navigation = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -29,13 +30,8 @@ export function AppShellClient({ children }: { children: React.ReactNode }) {
       <aside className={cn('fixed inset-y-0 left-0 z-40 w-[248px] border-r border-[#22252A] bg-[#17191D] p-4 text-[#FFFFFF] transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0', menuOpen ? 'translate-x-0' : '-translate-x-full')}>
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between px-2 py-2">
-            <Link href="/" className="flex items-center gap-2" aria-label="KAVANDOR home">
-              <span className="grid size-9 place-items-center rounded-lg bg-[#FF5A1F] text-white shadow-sm">
-                <Leaf size={19} strokeWidth={2.2} />
-              </span>
-              <span className="text-lg font-bold tracking-tight text-white">
-                KAVANDOR<span className="text-[#FF5A1F]">.</span>
-              </span>
+            <Link href="/" className="group flex items-center" aria-label="KAVANDOR home">
+              <KavandorLogo textColor="text-white" iconSize={26} />
             </Link>
             <button type="button" onClick={() => setMenuOpen(false)} className="grid size-10 place-items-center rounded-md text-neutral-400 hover:text-white lg:hidden" aria-label="Close navigation">
               <X size={20} />
