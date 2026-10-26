@@ -62,7 +62,7 @@ export default function MarketplacePage() {
             <div className="grid min-h-52 place-items-center bg-[#FAF9F5] border-b border-[#E2DED6] px-6 text-center">
               <div>
                 <p className="text-xs font-mono font-bold uppercase text-emerald-600">Verified Producer Lot</p>
-                <h2 className="mt-3 text-2xl font-bold text-[#17191D]">Ng'oina Banana Lot</h2>
+                <h2 className="mt-3 text-2xl font-bold text-[#17191D]">Ng&apos;oina Banana Lot</h2>
                 <p className="mt-1 text-sm text-[#74767B]">8 crates · Nyamira North</p>
               </div>
             </div>

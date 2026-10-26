@@ -7,7 +7,6 @@ import {
   type HarvestRecord,
   type OfferRecord,
   type ReservationRecord,
-  type TimelineEvent,
   type TransportJobRecord,
 } from '@/lib/backend';
 import {
@@ -421,7 +420,6 @@ export class BuyerMatchingAgent {
     const isAvocado = harvest.crop.toLowerCase().includes('avocado');
 
     const recommendedPrice = isTomato ? 48 : isAvocado ? 58 : 38;
-    const now = new Date().toISOString();
 
     const offer = await this.db.createOffer({
       harvestId: harvest.id,

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Boxes, LayoutDashboard, Leaf, Menu, PackageSearch, Sprout, Store, Warehouse, Truck, BellRing, PackageOpen, X } from 'lucide-react';
+import { Bell, Boxes, LayoutDashboard, Leaf, Menu, Sprout, Store, Warehouse, Truck, BellRing, PackageOpen, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { KavandorLogo } from '@/components/ui/logo';
