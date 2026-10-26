@@ -1,22 +1,15 @@
 import { NextResponse } from 'next/server';
-import { transportRequestSchema } from '@/validations/storage';
+import { createTransportJob, requireAuth, toErrorResponse } from '@/lib/backend';
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
-  const parsed = transportRequestSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: { code: 'BAD_REQUEST', message: 'Transport request is invalid.', issues: parsed.error.flatten() } }, { status: 400 });
+  try {
+    const actor = requireAuth(request, ['farmer', 'operations_admin']);
+    const payload = await request.json();
+    const job = createTransportJob(payload, actor);
+    return NextResponse.json({ job }, { status: 201 });
+  } catch (error) {
+    const payload = toErrorResponse(error);
+    const status = error instanceof Error && 'status' in error ? Number((error as { status: number }).status) : 400;
+    return NextResponse.json(payload, { status });
   }
-
-  return NextResponse.json({
-    ok: true,
-    transportRequest: {
-      id: 'SONGA-DEMO-001',
-      providerName: 'Songa Mobility',
-      integrationMode: 'demo',
-      status: 'quote_pending',
-      source: 'demo_data',
-      ...parsed.data,
-    },
-  }, { status: 201 });
 }

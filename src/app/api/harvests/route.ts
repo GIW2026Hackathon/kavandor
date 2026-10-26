@@ -1,35 +1,19 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const requestSchema = z.object({
-  crop: z.string().min(2),
-  quantity: z.number().positive(),
-  unit: z.enum(['kg', 'crate', 'bucket', 'box']),
-  harvestDate: z.string(),
-  location: z.string().min(2),
-  handlingNotes: z.string().optional(),
-  photoUrl: z.string().url().optional(),
-});
+import { createHarvest, getBackendState, requireAuth, toErrorResponse } from '@/lib/backend';
 
 export async function POST(request: Request) {
   try {
+    const actor = requireAuth(request, ['farmer', 'operations_admin']);
     const body = await request.json();
-    const parsed = requestSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: { code: 'BAD_REQUEST', message: 'Harvest payload is invalid.' } },
-        { status: 400 },
-      );
-    }
-
-    return NextResponse.json(
-      { ok: true, harvest: { ...parsed.data, id: 'demo-harvest-001', status: 'draft' } },
-      { status: 201 },
-    );
-  } catch {
-    return NextResponse.json(
-      { error: { code: 'BAD_REQUEST', message: 'Unable to parse harvest request.' } },
-      { status: 400 },
-    );
+    const harvest = createHarvest(body, actor);
+    return NextResponse.json({ harvest }, { status: 201 });
+  } catch (error) {
+    const payload = toErrorResponse(error);
+    const status = error instanceof Error && 'status' in error ? Number((error as { status: number }).status) : 400;
+    return NextResponse.json(payload, { status });
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ harvests: getBackendState().harvests });
 }
