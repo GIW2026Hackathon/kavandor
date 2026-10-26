@@ -8,6 +8,38 @@ import { AppShell } from '@/components/layout/app-shell';
 import { PageHeader } from '@/components/ui/page-header';
 import type { DemoFacility } from '@/demo/storage';
 
+function normalizeFacility(raw: Record<string, unknown>): DemoFacility {
+  const type = ((raw.facilityType || raw.facility_type || raw.type || 'cold_storage') as string) as 'cold_storage' | 'ambient' | 'drying';
+  const accepted = (raw.acceptedCommodities || raw.accepted_commodities || ['Tomatoes', 'Avocados', 'Bananas']) as string[];
+  const storageTypes = (raw.storageTypes || raw.storage_types || [type === 'cold_storage' ? 'cold' : type === 'drying' ? 'dry' : 'ambient']) as Array<'cold' | 'ambient' | 'dry'>;
+  const availableKg = raw.availableCapacityKg != null 
+    ? Number(raw.availableCapacityKg) 
+    : (type === 'cold_storage' ? 840 : type === 'drying' ? 1200 : 460);
+  const price = raw.pricePerUnit != null ? Number(raw.pricePerUnit) : (raw.price_per_unit != null ? Number(raw.price_per_unit) : 3.2);
+
+  return {
+    id: String(raw.id),
+    name: String(raw.name),
+    locality: String(raw.locality || raw.location || 'Kisii Town'),
+    county: (raw.county || 'Kisii') as 'Kisii' | 'Nyamira',
+    facilityType: type,
+    storageTypes: Array.isArray(storageTypes) ? storageTypes : ['cold'],
+    acceptedCommodities: Array.isArray(accepted) ? accepted : ['Tomatoes'],
+    description: String(raw.description || 'Certified regional agricultural storage node.'),
+    availableCapacityKg: availableKg,
+    pricePerUnit: price,
+    priceUnit: (raw.priceUnit || raw.price_unit || 'kg') as 'kg',
+    pricePeriod: (raw.pricePeriod || raw.price_period || 'day') as 'day',
+    temperatureC: raw.temperatureC != null ? Number(raw.temperatureC) : (type === 'cold_storage' ? 11.8 : type === 'drying' ? 24.2 : 21.4),
+    humidityPercent: raw.humidityPercent != null ? Number(raw.humidityPercent) : (type === 'cold_storage' ? 82 : type === 'drying' ? 56 : 68),
+    readingObservedAt: String(raw.readingObservedAt || raw.created_at || '2026-10-26T09:20:00Z'),
+    imageUrl: String(raw.imageUrl || (type === 'cold_storage' ? '/storage/cold-store.jpg' : type === 'drying' ? '/storage/dry-handling.jpg' : '/storage/ambient-store.jpg')),
+    imageAlt: String(raw.imageAlt || `${String(raw.name)} facility`),
+    source: (raw.source as DemoFacility['source']) || (raw.is_demo ? 'demo_data' : 'provider_confirmed'),
+    verificationStatus: (raw.verificationStatus || raw.verification_status || 'verified') as 'verified' | 'unverified',
+  };
+}
+
 export default function StorageDiscoveryPage() {
   const [facilities, setFacilities] = useState<DemoFacility[]>([]);
   const [crop, setCrop] = useState('Tomatoes');
@@ -18,14 +50,22 @@ export default function StorageDiscoveryPage() {
   useEffect(() => {
     fetch('/api/facilities')
       .then((response) => response.json())
-      .then((data) => setFacilities(data.facilities ?? []))
+      .then((data) => {
+        const rawList = Array.isArray(data.facilities) ? data.facilities : [];
+        setFacilities(rawList.map(normalizeFacility));
+      })
+      .catch(() => setFacilities([]))
       .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => facilities.filter((facility) => {
-    const cropMatch = facility.acceptedCommodities.some((item) => item.toLowerCase().includes(crop.toLowerCase()));
-    const localityMatch = !locality || facility.locality.toLowerCase().includes(locality.toLowerCase()) || facility.county.toLowerCase().includes(locality.toLowerCase());
-    const typeMatch = storageType === 'all' || facility.storageTypes.includes(storageType as 'cold' | 'ambient' | 'dry');
+    const commodities = Array.isArray(facility.acceptedCommodities) ? facility.acceptedCommodities : [];
+    const cropMatch = !crop || commodities.some((item) => typeof item === 'string' && item.toLowerCase().includes(crop.toLowerCase()));
+    const loc = facility.locality || '';
+    const cnty = facility.county || '';
+    const localityMatch = !locality || loc.toLowerCase().includes(locality.toLowerCase()) || cnty.toLowerCase().includes(locality.toLowerCase());
+    const types = Array.isArray(facility.storageTypes) ? facility.storageTypes : [];
+    const typeMatch = storageType === 'all' || types.includes(storageType as 'cold' | 'ambient' | 'dry');
     return cropMatch && localityMatch && typeMatch;
   }), [facilities, crop, locality, storageType]);
 

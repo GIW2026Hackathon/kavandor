@@ -469,7 +469,7 @@ export async function listFacilities(
   params: { commodity?: string; county?: string; limit: number },
 ) {
   let query = supabase.from('facilities')
-    .select('id, name, county, location, type, facility_type, accepted_commodities, price_per_unit, price_unit, price_period, minimum_quantity, verification_status, is_demo')
+    .select('id, name, county, location, type, facility_type, description, accepted_commodities, storage_types, price_per_unit, price_unit, price_period, minimum_quantity, verification_status, is_demo')
     .limit(params.limit);
   if (params.county) query = query.ilike('county', `%${escapeLike(sanitizeFilter(params.county))}%`);
   const { data, error } = await query.order('name', { ascending: true });
