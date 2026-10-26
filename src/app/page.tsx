@@ -1,9 +1,14 @@
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Leaf, MoveRight, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowRight, MoveRight } from 'lucide-react';
+import { KavandorLogo } from '@/components/ui/logo';
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#F6F3EC] text-[#212329]">
+<<<<<<< HEAD
+      {/* Full Bleed Hero Section — Raw video prominence, free centered composition */}
+=======
+>>>>>>> 67d96711dbaedf1cd9fd985b9e1cb00084d8eb83
       <section className="relative flex min-h-[92vh] w-full flex-col justify-between overflow-hidden bg-black text-white lg:min-h-screen">
         <video
           autoPlay
@@ -17,20 +22,60 @@ export default function HomePage() {
         </video>
 
         <header className="relative z-30 w-full border-b border-white/15 bg-black/20 backdrop-blur-xs">
-          <div className="mx-auto flex h-18 max-w-7xl items-center px-4 sm:px-6">
-            <Link href="/" className="flex items-center gap-2.5" aria-label="KAVANDOR home">
-              <span className="grid size-10 place-items-center rounded-xl bg-[#FF5A1F] text-white shadow-xl shadow-black/40">
-                <Leaf size={21} strokeWidth={2.4} />
-              </span>
-              <span className="text-2xl font-black tracking-tight text-white drop-shadow-md">
-                KAVANDOR<span className="text-[#FF5A1F]">.</span>
-              </span>
+          <div className="relative mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6">
+            {/* Left: Unboxed Bespoke Logo */}
+            <Link href="/" className="group flex items-center" aria-label="KAVANDOR home">
+              <KavandorLogo textColor="text-white" iconSize={32} />
             </Link>
-            <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-white md:flex">
+
+            {/* Center: Navigation Links centered horizontally */}
+            <nav className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-8 text-sm font-semibold text-white">
               <a href="#how" className="drop-shadow transition hover:text-[#FF5A1F]">How it works</a>
               <a href="#audience" className="drop-shadow transition hover:text-[#FF5A1F]">For farmers</a>
               <a href="#audience" className="drop-shadow transition hover:text-[#FF5A1F]">For buyers</a>
             </nav>
+<<<<<<< HEAD
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="rounded-xl border border-white/30 bg-black/25 px-4 py-2 text-sm font-bold text-white shadow-md backdrop-blur-md transition hover:bg-black/45"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/harvests/new"
+                className="hidden rounded-xl bg-[#FF5A1F] px-4 py-2 text-sm font-bold text-white shadow-xl shadow-black/40 transition hover:bg-[#E44E18] active:scale-98 sm:block"
+              >
+                Get started
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* Hero Content — Centered freely over the background video, zero clutter */}
+        <div className="relative z-20 mx-auto my-auto flex max-w-4xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 md:py-28">
+          <h1 className="text-5xl font-black tracking-tight text-white leading-[1.04] sm:text-7xl lg:text-8xl drop-shadow-[0_4px_32px_rgba(0,0,0,0.95)]">
+            Every harvest has a <span className="text-[#FF5A1F] drop-shadow-[0_4px_32px_rgba(0,0,0,0.95)]">next move.</span>
+          </h1>
+          <p className="mt-8 max-w-2xl text-lg sm:text-2xl text-white font-medium leading-relaxed drop-shadow-[0_2px_16px_rgba(0,0,0,0.95)]">
+            Know your harvest, compare practical local options, and make the next move with total confidence.
+          </p>
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href="/harvests/new"
+              className="flex h-14 items-center justify-center gap-2.5 rounded-2xl bg-[#FF5A1F] px-8 text-base font-bold text-white shadow-2xl shadow-black/70 transition-all hover:bg-[#E44E18] hover:shadow-[#FF5A1F]/30 hover:scale-[1.02] active:scale-98"
+            >
+              Register a harvest <ArrowRight size={18} />
+            </Link>
+            <a
+              href="#how"
+              className="flex h-14 items-center justify-center rounded-2xl border border-white/35 bg-black/30 px-8 text-base font-bold text-white backdrop-blur-md shadow-xl transition-all hover:bg-black/50 hover:border-white/55 active:scale-98"
+            >
+              Explore how it works
+            </a>
+=======
             <Link
               href="/auth/signin"
               className="ml-6 rounded-xl border border-white/30 bg-black/25 px-4 py-2 text-sm font-bold text-white shadow-md backdrop-blur-md transition hover:bg-black/45"
@@ -129,6 +174,7 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+>>>>>>> 67d96711dbaedf1cd9fd985b9e1cb00084d8eb83
           </div>
         </div>
       </section>
