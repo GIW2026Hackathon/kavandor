@@ -1,9 +1,4 @@
-import {
-  env,
-  hasFacebookAuthConfig,
-  hasGoogleAuthConfig,
-  hasSupabaseConfig,
-} from '@/lib/env';
+import { hasPublicSupabaseConfig, publicEnv } from '@/lib/public-env';
 
 export type SocialProvider = 'google' | 'facebook';
 
@@ -21,23 +16,23 @@ export function getSocialAuthProviders(): SocialAuthProviderConfig[] {
       id: 'google',
       label: 'Google',
       description: 'Continue with a Google account.',
-      enabled: hasGoogleAuthConfig,
+      enabled: Boolean(publicEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID),
       envVar: 'NEXT_PUBLIC_GOOGLE_CLIENT_ID',
     },
     {
       id: 'facebook',
       label: 'Facebook',
       description: 'Continue with a Facebook account.',
-      enabled: hasFacebookAuthConfig,
+      enabled: Boolean(publicEnv.NEXT_PUBLIC_FACEBOOK_APP_ID),
       envVar: 'NEXT_PUBLIC_FACEBOOK_APP_ID',
     },
   ];
 }
 
 export function getAuthRedirectUrl() {
-  return env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  return publicEnv.NEXT_PUBLIC_SITE_URL;
 }
 
 export function isAuthReady() {
-  return hasSupabaseConfig;
+  return hasPublicSupabaseConfig;
 }

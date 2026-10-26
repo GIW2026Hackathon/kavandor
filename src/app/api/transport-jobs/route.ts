@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createTransportJob, requireAuth, toErrorResponse } from '@/lib/backend';
+import { readJson } from '@/lib/api-errors';
+import { withAuthenticatedApi } from '@/lib/api-route';
+import { createTransportJob } from '@/lib/server-backend';
 
 export async function POST(request: Request) {
-  try {
-    const actor = requireAuth(request, ['farmer', 'operations_admin']);
-    const payload = await request.json();
-    const job = createTransportJob(payload, actor);
-    return NextResponse.json({ job }, { status: 201 });
-  } catch (error) {
-    const payload = toErrorResponse(error);
-    const status = error instanceof Error && 'status' in error ? Number((error as { status: number }).status) : 400;
-    return NextResponse.json(payload, { status });
-  }
+  return withAuthenticatedApi(request, ['farmer'], async ({ supabase }) => {
+    const job = await createTransportJob(supabase, await readJson(request));
+    return NextResponse.json({ transportRequest: job }, { status: 201 });
+  });
+}
+
+export async function GET(request: Request) {
+  return withAuthenticatedApi(request, ['farmer', 'transport_provider', 'operations_admin'], async ({ supabase }) => {
+    const { data, error } = await supabase.from('transport_jobs').select('*')
+      .order('created_at', { ascending: false }).limit(100);
+    if (error) throw error;
+    return NextResponse.json({ transportJobs: data ?? [] });
+  });
 }

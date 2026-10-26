@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, LocateFixed, MapPin, Search, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -84,7 +85,14 @@ export default function StorageDiscoveryPage() {
         ) : (
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
             {filtered.map((facility) => (
-              <article key={facility.id} className="rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-6 shadow-xs hover:border-[#FF5A1F] transition">
+              <article key={facility.id} className="overflow-hidden rounded-2xl border border-[#E2DED6] bg-white shadow-xs hover:border-[#FF5A1F] transition">
+                <div className="relative aspect-[16/7] w-full overflow-hidden bg-[#22252A]">
+                  <Image src={facility.imageUrl} alt={facility.imageAlt} fill sizes="(max-width: 1024px) 100vw, 590px" className="object-cover" />
+                  <span className="absolute bottom-3 left-3 rounded-md bg-[#17191D]/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
+                    Illustrative image
+                  </span>
+                </div>
+                <div className="p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <span className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">{facility.facilityType.replace('_', ' ')}</span>
@@ -122,6 +130,7 @@ export default function StorageDiscoveryPage() {
                   <Link href={`/storage/${facility.id}/request`} className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] text-sm font-bold text-white shadow-sm transition active:scale-98">
                     Reserve storage <ArrowRight size={16} />
                   </Link>
+                </div>
                 </div>
               </article>
             ))}

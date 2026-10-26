@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 export const harvestSchema = z.object({
-  crop: z.string().min(2).max(80),
-  quantity: z.number().positive(),
+  crop: z.string().trim().min(2).max(80),
+  quantity: z.number().positive().finite(),
   unit: z.enum(['kg', 'crate', 'bucket', 'box']),
-  harvestDate: z.string().datetime({ offset: true }).or(z.string().min(1)),
-  location: z.string().min(2).max(150),
+  harvestDate: z.string().datetime({ offset: true }),
+  location: z.string().trim().min(2).max(150),
   handlingNotes: z.string().max(500).optional(),
   photoUrl: z.string().url().optional().or(z.literal('')),
 });

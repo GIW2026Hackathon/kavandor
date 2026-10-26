@@ -14,6 +14,8 @@ export type DemoFacility = {
   temperatureC: number;
   humidityPercent: number;
   readingObservedAt: string;
+  imageUrl: string;
+  imageAlt: string;
   source: 'provider_confirmed' | 'provider_reported' | 'manually_entered' | 'demo_data';
   verificationStatus: 'verified' | 'unverified';
 };
@@ -35,6 +37,8 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 11.8,
     humidityPercent: 82,
     readingObservedAt: '2026-10-26T09:20:00Z',
+    imageUrl: '/storage/cold-store.jpg',
+    imageAlt: 'Kisii Central Cold Store Hub climate-controlled pallet bays',
     source: 'provider_confirmed',
     verificationStatus: 'verified',
   },
@@ -54,6 +58,8 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 21.4,
     humidityPercent: 68,
     readingObservedAt: '2026-10-26T08:45:00Z',
+    imageUrl: '/storage/ambient-store.jpg',
+    imageAlt: 'Nyamira Ventilated Storage Center produce sorting and aggregation crates',
     source: 'provider_confirmed',
     verificationStatus: 'verified',
   },
@@ -73,6 +79,8 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 24.2,
     humidityPercent: 56,
     readingObservedAt: '2026-10-26T07:30:00Z',
+    imageUrl: '/storage/dry-handling.jpg',
+    imageAlt: 'Keumbu Solar Dehydration Facility clean drying and packaging zone',
     source: 'provider_confirmed',
     verificationStatus: 'verified',
   },

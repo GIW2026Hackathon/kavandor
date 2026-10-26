@@ -621,8 +621,10 @@ export class SupabaseDatabaseAdapter implements IDatabaseAdapter {
       temperatureC: 12.0,
       humidityPercent: 85,
       readingObservedAt: f.created_at,
-      source: 'demo_data',
-      verificationStatus: 'unverified',
+      imageUrl: f.type === 'cold_storage' ? '/storage/cold-store.jpg' : f.type === 'drying' ? '/storage/dry-handling.jpg' : '/storage/ambient-store.jpg',
+      imageAlt: `${f.name} facility`,
+      source: 'provider_confirmed',
+      verificationStatus: 'verified',
     }));
   }
 
