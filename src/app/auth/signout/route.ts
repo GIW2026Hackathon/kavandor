@@ -3,9 +3,10 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { env, hasSupabaseConfig } from '@/lib/env';
 
-export async function POST() {
+export async function POST(request: Request) {
+  const destination = new URL('/auth/signin', request.url);
   if (!hasSupabaseConfig || !env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return NextResponse.redirect(new URL('/auth/signin', 'http://localhost:3000'));
+    return NextResponse.redirect(destination);
   }
 
   const cookieStore = await cookies();
@@ -23,5 +24,5 @@ export async function POST() {
   });
 
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL('/auth/signin', 'http://localhost:3000'));
+  return NextResponse.redirect(destination);
 }

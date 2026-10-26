@@ -1,10 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { env, hasSupabaseConfig } from '@/lib/env';
+import { hasPublicSupabaseConfig, publicEnv } from '@/lib/public-env';
 
 export function getSupabaseBrowserClient() {
-  if (!hasSupabaseConfig || !env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (!hasPublicSupabaseConfig || !publicEnv.NEXT_PUBLIC_SUPABASE_URL || !publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return null;
   }
 
-  return createBrowserClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  return createBrowserClient(publicEnv.NEXT_PUBLIC_SUPABASE_URL, publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }

@@ -6,9 +6,8 @@ import { env, hasSupabaseConfig } from '@/lib/env';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const requestedRole = searchParams.get('role');
-  const fallbackForRole = requestedRole === 'facility_operator' ? '/partners' : requestedRole === 'transport_provider' ? '/transport' : '/dashboard';
-  const next = searchParams.get('next') ?? fallbackForRole;
+  const requestedNext = searchParams.get('next') ?? '/dashboard';
+  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/dashboard';
 
   if (!hasSupabaseConfig || !env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.redirect(`${origin}/auth/signin?error=${encodeURIComponent('Supabase is not configured for authentication.')}`);

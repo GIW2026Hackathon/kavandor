@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Camera, Check, ChevronLeft, ChevronRight, MapPin, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const steps = ['Produce', 'Harvest details', 'Location', 'Photos', 'Review'];
 
@@ -36,10 +36,14 @@ const initialDraft: HarvestDraft = {
 export function IntakeWizard() {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState(initialDraft);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [reference, setReference] = useState('');
+  const [idempotencyKey, setIdempotencyKey] = useState('');
+  const photoPreviews = useMemo(() => photos.map((file) => URL.createObjectURL(file)), [photos]);
+
+  useEffect(() => () => photoPreviews.forEach((preview) => URL.revokeObjectURL(preview)), [photoPreviews]);
 
   const update = (field: keyof HarvestDraft, value: string) => setDraft((current) => ({ ...current, [field]: value }));
   const validate = () => {
@@ -57,13 +61,36 @@ export function IntakeWizard() {
     setSubmitting(true);
     setError('');
     try {
+      const requestKey = idempotencyKey || crypto.randomUUID();
+      if (!idempotencyKey) setIdempotencyKey(requestKey);
       const response = await fetch('/api/harvests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...draft, quantity: Number(draft.quantity), photoUrl: photos[0] }),
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey },
+        body: JSON.stringify({
+          crop: draft.crop,
+          variety: draft.variety,
+          quantity: Number(draft.quantity),
+          harvestDate: new Date(`${draft.harvestDate}T${draft.harvestTime}:00`).toISOString(),
+          unit: draft.unit,
+          handlingNotes: draft.handlingNotes,
+          availability: draft.availability,
+          location: draft.location,
+          county: draft.county,
+          idempotencyKey: requestKey,
+        }),
       });
-      if (!response.ok) throw new Error('The harvest could not be saved.');
-      setReference('KV-2026-001');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error?.message ?? 'The harvest could not be saved.');
+      if (photos.length > 0) {
+        const form = new FormData();
+        photos.forEach((file) => form.append('photos', file));
+        const photoResponse = await fetch(`/api/harvests/${result.harvest.id}/photos`, { method: 'POST', body: form });
+        const photoResult = await photoResponse.json();
+        if (!photoResponse.ok) {
+          throw new Error(`Harvest ${result.harvest.id} was saved, but the photos were not uploaded: ${photoResult.error?.message ?? 'Upload failed.'}`);
+        }
+      }
+      setReference(result.harvest.id);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to save harvest.');
     } finally {
@@ -79,8 +106,8 @@ export function IntakeWizard() {
         </span>
         <p className="mt-7 text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Harvest registered</p>
         <h1 className="mt-2 text-3xl font-extrabold text-[#17191D]">Reference {reference}</h1>
-        <p className="mt-3 text-sm text-[#74767B]">Your demo harvest has been submitted. A visible-condition assessment is the next step.</p>
-        <Link href="/harvests/demo-harvest-001" className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-6 text-sm font-bold text-white shadow-md transition active:scale-98">
+        <p className="mt-3 text-sm text-[#74767B]">Your harvest has been saved. A visible-condition assessment can be requested next.</p>
+        <Link href={`/harvests/${reference}`} className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-6 text-sm font-bold text-white shadow-md transition active:scale-98">
           Open harvest intelligence <ChevronRight size={17} />
         </Link>
       </section>
@@ -134,7 +161,7 @@ export function IntakeWizard() {
         {step === 3 && (
           <Fieldset title="Add produce photos" copy="Use clear, recent photos of the visible lot. JPEG and PNG are accepted; do not use more than five.">
             <label className="grid min-h-52 cursor-pointer place-items-center rounded-xl border-2 border-dashed border-[#E2DED6] bg-[#FAF9F5] px-5 text-center hover:border-[#FF5A1F] transition">
-              <input type="file" accept="image/jpeg,image/png" multiple className="sr-only" onChange={(event) => setPhotos(Array.from(event.target.files ?? []).map((file) => URL.createObjectURL(file)).slice(0, 5))} />
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(event) => setPhotos(Array.from(event.target.files ?? []).slice(0, 5))} />
               <span>
                 <Camera size={32} className="mx-auto text-[#FF5A1F]" />
                 <span className="mt-3 block text-sm font-bold text-[#17191D]">Open camera or choose photos</span>
@@ -143,8 +170,8 @@ export function IntakeWizard() {
             </label>
             {photos.length > 0 && (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {photos.map((photo) => (
-                  <Image key={photo} src={photo} alt="Selected harvest preview" width={400} height={400} unoptimized className="aspect-square w-full rounded-xl object-cover border border-[#E2DED6]" />
+                {photoPreviews.map((photo, index) => (
+                  <Image key={`${photos[index].name}-${index}`} src={photo} alt="Selected harvest preview" width={400} height={400} unoptimized className="aspect-square w-full rounded-xl object-cover border border-[#E2DED6]" />
                 ))}
               </div>
             )}
