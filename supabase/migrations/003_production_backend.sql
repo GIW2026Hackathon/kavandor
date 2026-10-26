@@ -231,7 +231,7 @@ begin
   if auth.uid() is null then raise exception 'Authentication required' using errcode = '28000'; end if;
   if public.kavandor_current_role() <> 'farmer' then raise exception 'Farmer role required' using errcode = '42501'; end if;
   if length(trim(p_crop)) < 2 or length(trim(p_location)) < 2 or p_quantity <= 0
-     or p_unit not in ('kg', 'crate', 'bucket', 'box') then
+     or p_unit not in ('kg', 'g', 'tonne', 'litre', 'bag', 'sack', 'crate', 'bucket', 'box', 'carton', 'bunch', 'piece', 'head', 'dozen', 'bale') then
     raise exception 'Invalid harvest data' using errcode = '22023';
   end if;
   if p_idempotency_key is not null then
