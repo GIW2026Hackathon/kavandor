@@ -33,27 +33,101 @@ export default function StorageDiscoveryPage() {
       <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 lg:px-8">
         <PageHeader eyebrow="Post-harvest support" title="Find storage near you" description="Keep your harvest safe while you plan the next move." />
 
-        <section className="mt-7 border border-[#004A25]/10 bg-white p-4 sm:p-5">
+        <section className="mt-7 rounded-2xl border border-[#E2DED6] bg-white p-5 shadow-xs">
           <div className="grid gap-3 lg:grid-cols-[1fr_1fr_.7fr_auto]">
-            <label className="grid gap-1.5 text-xs font-bold text-[#3E594B]">County or locality<div className="flex h-11 items-center gap-2 border border-[#004A25]/15 px-3"><MapPin size={17} /><input value={locality} onChange={(event) => setLocality(event.target.value)} placeholder="Kisii or Nyamira" className="min-w-0 flex-1 text-sm outline-none" /></div></label>
-            <label className="grid gap-1.5 text-xs font-bold text-[#3E594B]">Produce<div className="flex h-11 items-center gap-2 border border-[#004A25]/15 px-3"><Search size={17} /><input value={crop} onChange={(event) => setCrop(event.target.value)} placeholder="Tomatoes" className="min-w-0 flex-1 text-sm outline-none" /></div></label>
-            <label className="grid gap-1.5 text-xs font-bold text-[#3E594B]">Storage type<select value={storageType} onChange={(event) => setStorageType(event.target.value)} className="h-11 border border-[#004A25]/15 bg-white px-3 text-sm"><option value="all">All types</option><option value="cold">Cold</option><option value="ambient">Ambient</option><option value="dry">Dry</option></select></label>
-            <button type="button" onClick={() => navigator.geolocation?.getCurrentPosition(() => setLocality('Kisii'))} className="mt-[21px] flex h-11 items-center justify-center gap-2 border border-[#004A25]/15 px-4 text-sm font-bold"><LocateFixed size={17} /> Use location</button>
+            <label className="grid gap-1.5 text-xs font-bold text-[#74767B]">
+              County or locality
+              <div className="flex h-11 items-center gap-2 rounded-xl border border-[#E2DED6] px-3 focus-within:border-[#FF5A1F] transition">
+                <MapPin size={17} className="text-[#FF5A1F]" />
+                <input value={locality} onChange={(event) => setLocality(event.target.value)} placeholder="Kisii or Nyamira" className="min-w-0 flex-1 text-sm outline-none text-[#17191D]" />
+              </div>
+            </label>
+            <label className="grid gap-1.5 text-xs font-bold text-[#74767B]">
+              Produce
+              <div className="flex h-11 items-center gap-2 rounded-xl border border-[#E2DED6] px-3 focus-within:border-[#FF5A1F] transition">
+                <Search size={17} className="text-[#74767B]" />
+                <input value={crop} onChange={(event) => setCrop(event.target.value)} placeholder="Tomatoes" className="min-w-0 flex-1 text-sm outline-none text-[#17191D]" />
+              </div>
+            </label>
+            <label className="grid gap-1.5 text-xs font-bold text-[#74767B]">
+              Storage type
+              <select value={storageType} onChange={(event) => setStorageType(event.target.value)} className="h-11 rounded-xl border border-[#E2DED6] bg-white px-3 text-sm text-[#17191D] outline-none focus:border-[#FF5A1F]">
+                <option value="all">All types</option>
+                <option value="cold">Cold</option>
+                <option value="ambient">Ambient</option>
+                <option value="dry">Dry</option>
+              </select>
+            </label>
+            <button type="button" onClick={() => navigator.geolocation?.getCurrentPosition(() => setLocality('Kisii'))} className="mt-[21px] flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E2DED6] bg-white px-4 text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] shadow-2xs transition">
+              <LocateFixed size={17} className="text-[#FF5A1F]" /> Use location
+            </button>
           </div>
         </section>
 
-        <div className="mt-6 flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase text-[#3E594B]">Demo facilities</p><h2 className="mt-1 text-xl font-bold">Suitable places for {crop || 'your produce'}</h2></div><button type="button" className="flex h-10 items-center gap-2 border border-[#004A25]/15 px-3 text-sm font-bold"><SlidersHorizontal size={16} /> Filters</button></div>
+        <div className="mt-6 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Demo facilities</p>
+            <h2 className="mt-1 text-xl font-bold text-[#17191D]">Suitable places for {crop || 'your produce'}</h2>
+          </div>
+          <button type="button" className="flex h-10 items-center gap-2 rounded-xl border border-[#E2DED6] bg-white px-3 text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] shadow-2xs">
+            <SlidersHorizontal size={16} /> Filters
+          </button>
+        </div>
 
-        {loading ? <div className="mt-5 h-52 animate-pulse bg-[#EDF5DF]" /> : filtered.length === 0 ? <div className="mt-5 border border-dashed border-[#004A25]/20 p-8 text-center"><h3 className="font-bold">No matching demo facility</h3><p className="mt-2 text-sm text-[#3E594B]">Try another crop, county or storage type.</p></div> : <div className="mt-5 grid gap-5 lg:grid-cols-2">{filtered.map((facility) => (
-          <article key={facility.id} className="border border-[#004A25]/10 bg-white p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4"><div><span className="text-xs font-bold uppercase text-[#76AC3C]">Demo · {facility.facilityType.replace('_', ' ')}</span><h3 className="mt-2 text-xl font-bold">{facility.name}</h3><p className="mt-1 flex items-center gap-1.5 text-sm text-[#3E594B]"><MapPin size={15} /> {facility.locality}, {facility.county}</p></div><span className="rounded-full border border-[#004A25]/15 px-2 py-1 text-[10px] font-bold">Unverified</span></div>
-            <p className="mt-4 text-sm leading-6 text-[#3E594B]">{facility.description}</p>
-            <div className="mt-5 grid grid-cols-3 border-y border-[#004A25]/10 py-4 text-sm"><div><p className="text-xs text-[#3E594B]">Capacity</p><p className="mt-1 font-bold">{facility.availableCapacityKg.toLocaleString()} kg</p></div><div className="border-x border-[#004A25]/10 px-3"><p className="text-xs text-[#3E594B]">Demo price</p><p className="mt-1 font-bold">KSh {facility.pricePerUnit}/{facility.priceUnit}/{facility.pricePeriod}</p></div><div className="pl-3"><p className="text-xs text-[#3E594B]">Condition</p><p className="mt-1 font-bold">{facility.temperatureC}°C</p></div></div>
-            <p className="mt-4 text-xs leading-5 text-[#3E594B]">Accepted: {facility.acceptedCommodities.join(', ')} · Reading: {new Date(facility.readingObservedAt).toLocaleString('en-KE')}</p>
-            <div className="mt-5 flex gap-3"><Link href={`/storage/${facility.id}`} className="flex h-11 flex-1 items-center justify-center border border-[#004A25]/15 text-sm font-bold">View facility</Link><Link href={`/storage/${facility.id}/request`} className="flex h-11 flex-1 items-center justify-center gap-1 rounded-lg bg-[#F2C303] text-sm font-bold text-[#004A25]">Request storage <ArrowRight size={16} /></Link></div>
-          </article>
-        ))}</div>}
-        <div className="mt-6"><DemoNotice>Fictional facilities and conditions for demonstration. Distances and locations are not live or verified.</DemoNotice></div>
+        {loading ? (
+          <div className="mt-5 h-52 animate-pulse rounded-2xl bg-[#E2DED6]/40" />
+        ) : filtered.length === 0 ? (
+          <div className="mt-5 rounded-2xl border border-dashed border-[#E2DED6] bg-white p-8 text-center">
+            <h3 className="font-bold text-[#17191D]">No matching demo facility</h3>
+            <p className="mt-2 text-sm text-[#74767B]">Try another crop, county or storage type.</p>
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            {filtered.map((facility) => (
+              <article key={facility.id} className="rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-6 shadow-xs hover:border-[#FF5A1F] transition">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">Demo · {facility.facilityType.replace('_', ' ')}</span>
+                    <h3 className="mt-2 text-xl font-bold text-[#17191D]">{facility.name}</h3>
+                    <p className="mt-1 flex items-center gap-1.5 text-sm text-[#74767B]">
+                      <MapPin size={15} className="text-[#FF5A1F]" /> {facility.locality}, {facility.county}
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-[#E2DED6] bg-[#FAF9F5] px-2.5 py-1 text-[10px] font-bold text-[#74767B]">
+                    Unverified
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-[#74767B]">{facility.description}</p>
+                <div className="mt-5 grid grid-cols-3 border-y border-[#E2DED6] py-4 text-sm">
+                  <div>
+                    <p className="text-xs font-mono uppercase text-[#74767B]">Capacity</p>
+                    <p className="mt-1 font-bold text-[#17191D] font-mono">{facility.availableCapacityKg.toLocaleString()} kg</p>
+                  </div>
+                  <div className="border-x border-[#E2DED6] px-3">
+                    <p className="text-xs font-mono uppercase text-[#74767B]">Demo price</p>
+                    <p className="mt-1 font-bold text-[#17191D] font-mono">KSh {facility.pricePerUnit}/{facility.priceUnit}</p>
+                  </div>
+                  <div className="pl-3">
+                    <p className="text-xs font-mono uppercase text-[#74767B]">Condition</p>
+                    <p className="mt-1 font-bold text-[#2563EB] font-mono">{facility.temperatureC}°C</p>
+                  </div>
+                </div>
+                <p className="mt-4 text-xs leading-5 text-[#74767B]">
+                  Accepted: {facility.acceptedCommodities.join(', ')} · Reading: {new Date(facility.readingObservedAt).toLocaleString('en-KE')}
+                </p>
+                <div className="mt-5 flex gap-3">
+                  <Link href={`/storage/${facility.id}`} className="flex h-11 flex-1 items-center justify-center rounded-xl border border-[#E2DED6] bg-white text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] transition shadow-2xs">
+                    View facility
+                  </Link>
+                  <Link href={`/storage/${facility.id}/request`} className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] text-sm font-bold text-white shadow-sm transition active:scale-98">
+                    Request storage <ArrowRight size={16} />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+        <div className="mt-8"><DemoNotice>Fictional facilities and conditions for demonstration. Distances and locations are not live or verified.</DemoNotice></div>
       </div>
     </AppShell>
   );

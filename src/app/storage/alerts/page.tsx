@@ -12,7 +12,35 @@ export default function StorageAlertsPage() {
     <AppShell>
       <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 lg:px-8">
         <PageHeader eyebrow="Attention required" title="Storage alerts" description="Review condition observations and booking follow-ups." />
-        <div className="mt-7 grid gap-4">{alerts.map((alert) => <article key={alert.title} className="grid gap-4 border-l-2 border-[#76AC3C] border-y border-r border-[#004A25]/10 bg-white p-5 sm:grid-cols-[150px_1fr_auto]"><div><span className="text-xs font-bold uppercase text-[#3E594B]">{alert.severity}</span><p className="mt-2 text-xs text-[#3E594B]">{alert.time}</p></div><div><h2 className="font-bold">{alert.title}</h2><p className="mt-2 text-sm leading-6 text-[#3E594B]">{alert.detail}</p><p className="mt-2 text-xs text-[#3E594B]">Source: {alert.source}</p></div><span className="h-fit rounded-full bg-[#FFF4C5] px-3 py-1 text-xs font-bold">{alert.status}</span></article>)}</div>
+        <div className="mt-7 grid gap-4">
+          {alerts.map((alert) => (
+            <article
+              key={alert.title}
+              className={`grid gap-4 rounded-2xl border border-[#E2DED6] bg-white p-5 shadow-sm sm:grid-cols-[150px_1fr_auto] ${
+                alert.severity === 'Warning' ? 'border-l-4 border-l-[#FF5A1F]' : 'border-l-4 border-l-[#17191D]'
+              }`}
+            >
+              <div>
+                <span
+                  className={`text-xs font-mono font-bold uppercase tracking-wider ${
+                    alert.severity === 'Warning' ? 'text-[#FF5A1F]' : 'text-[#74767B]'
+                  }`}
+                >
+                  {alert.severity}
+                </span>
+                <p className="mt-2 text-xs text-[#74767B]">{alert.time}</p>
+              </div>
+              <div>
+                <h2 className="font-bold text-[#17191D]">{alert.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-[#74767B]">{alert.detail}</p>
+                <p className="mt-2 text-xs text-[#9E9E9E]">Source: {alert.source}</p>
+              </div>
+              <span className="h-fit rounded-full border border-[#FFD9CC] bg-[#FFF0EB] px-3 py-1 text-xs font-bold text-[#FF5A1F]">
+                {alert.status}
+              </span>
+            </article>
+          ))}
+        </div>
         <div className="mt-6"><DemoNotice>Alerts represent seeded demonstration records; they do not prove produce spoilage or dispatch status.</DemoNotice></div>
       </div>
     </AppShell>

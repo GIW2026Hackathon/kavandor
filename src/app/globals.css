@@ -1,12 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FFFFFF;
+  --background: #F6F3EC;
   --surface: #FFFFFF;
-  --foreground: #004A25;
-  --muted: #3E594B;
-  --accent: #F2C303;
-  --brand-green: #76AC3C;
+  --surface-subtle: #FAF9F5;
+  --foreground: #212329;
+  --foreground-dark: #17191D;
+  --muted: #74767B;
+  --accent: #FF5A1F;
+  --accent-hover: #E44E18;
+  --accent-light: #FFF0EB;
+  --brand-charcoal: #17191D;
+  --brand-charcoal-elevated: #22252A;
+  --brand-orange: #FF5A1F;
+  --brand-green: #00C896;
+  --border-subtle: #E2DED6;
 }
 
 @theme inline {
@@ -15,9 +23,11 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-charcoal: var(--brand-charcoal);
   --color-brand-green: var(--brand-green);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
 }
 
 html {
@@ -27,7 +37,8 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -35,5 +46,25 @@ body {
 }
 
 ::selection {
-  background: rgba(242, 195, 3, 0.55);
+  background: #FF5A1F;
+  color: #FFFFFF;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F6F3EC;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D8D3C8;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B5AFA2;
 }

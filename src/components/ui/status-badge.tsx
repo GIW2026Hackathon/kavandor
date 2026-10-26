@@ -1,16 +1,16 @@
 import { cn } from '@/lib/utils';
 
 const styles = {
-  draft: 'border-[#3E594B]/20 bg-white text-[#3E594B]',
-  submitted: 'border-[#B5A45C]/30 bg-[#FFF4C5] text-[#004A25]',
-  assessed: 'border-[#76AC3C]/25 bg-[#EDF5DF] text-[#004A25]',
-  listed: 'border-[#3E594B]/25 bg-[#EAF0E8] text-[#004A25]',
-  offer_pending: 'border-[#76AC3C]/25 bg-[#FFF4C5] text-[#004A25]',
-  reserved: 'border-[#76AC3C]/25 bg-[#EDF5DF] text-[#004A25]',
-  sold: 'border-[#76AC3C]/25 bg-[#004A25] text-white',
-  collected: 'border-[#76AC3C]/25 bg-[#EDF5DF] text-[#004A25]',
-  completed: 'border-[#76AC3C]/25 bg-[#004A25] text-white',
-  cancelled: 'border-[#3E594B]/20 bg-[#F2F4F0] text-[#3E594B]',
+  draft: 'border-[#E2DED6] bg-[#FAF9F5] text-[#74767B]',
+  submitted: 'border-[#F0B34D]/40 bg-[#FFF8E7] text-[#B45309]',
+  assessed: 'border-[#00C896]/30 bg-[#E6F9F4] text-[#008765]',
+  listed: 'border-[#426E8C]/30 bg-[#EDF4F9] text-[#2C526D]',
+  offer_pending: 'border-[#FF5A1F]/30 bg-[#FFF0EB] text-[#FF5A1F] font-bold',
+  reserved: 'border-[#F0B34D]/40 bg-[#FFF8E7] text-[#B45309]',
+  sold: 'border-[#17191D] bg-[#17191D] text-white',
+  collected: 'border-[#00C896]/30 bg-[#E6F9F4] text-[#008765]',
+  completed: 'border-[#17191D] bg-[#17191D] text-white',
+  cancelled: 'border-[#DC2626]/30 bg-[#FEF2F2] text-[#DC2626]',
 } as const;
 
 const labels = {

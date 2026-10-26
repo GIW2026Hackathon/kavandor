@@ -17,10 +17,49 @@ export default async function TransportTrackingPage({ params }: { params: Promis
   return (
     <AppShell>
       <div className="mx-auto max-w-5xl px-4 py-7 sm:px-6 lg:py-10">
-        <p className="text-xs font-bold uppercase text-[#76AC3C]">Demo — not connected to Songa Mobility dispatch</p><h1 className="mt-2 text-3xl font-bold sm:text-4xl">Transport tracking</h1><p className="mt-2 text-sm text-[#3E594B]">Reference {requestId}</p>
+        <p className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">Demo — not connected to Songa Mobility dispatch</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#17191D] sm:text-4xl">Transport tracking</h1>
+        <p className="mt-2 text-sm text-[#74767B]">Reference {requestId}</p>
         <div className="mt-7 grid gap-6 md:grid-cols-[1fr_320px]">
-          <section className="border border-[#004A25]/10 bg-white p-5 sm:p-7">{events.map((event, index) => <div key={event.title} className="grid grid-cols-[32px_1fr] gap-4 pb-8 last:pb-0"><div className="relative flex justify-center">{index < events.length - 1 && <span className={`absolute bottom-[-28px] top-7 w-px ${event.done ? 'bg-[#76AC3C]' : 'bg-[#004A25]/10'}`} />}<span className={`relative z-10 grid size-7 place-items-center rounded-full border ${event.done ? 'border-[#76AC3C] bg-[#F2C303]' : 'border-[#004A25]/15 bg-white'}`}>{event.done && <Check size={14} />}</span></div><div><p className="text-xs font-semibold text-[#3E594B]">{event.time}</p><h2 className="mt-1 font-bold">{event.title}</h2><p className="mt-1 text-sm leading-6 text-[#3E594B]">{event.detail}</p><p className="mt-1 text-xs text-[#3E594B]">Source: {event.source}</p></div></div>)}</section>
-          <aside className="h-fit bg-[#004A25] p-5 text-white"><p className="text-xs font-bold uppercase text-[#F2C303]">Songa Mobility · demo</p><h2 className="mt-3 text-xl font-bold">Quote pending</h2><dl className="mt-5 space-y-4 border-t border-white/10 pt-5 text-sm"><Summary label="Produce" value="220 kg tomatoes" /><Summary label="Pickup" value="Nyakundi farm, Kisii" /><Summary label="Destination" value="Kisii Cold Store Demo" /><Summary label="Quote" value="Awaiting provider" /></dl><Link href="/storage/requests" className="mt-5 block text-sm font-bold underline underline-offset-4">Back to storage request</Link></aside>
+          <section className="rounded-2xl border border-[#E2DED6] bg-white p-5 shadow-sm sm:p-7">
+            {events.map((event, index) => (
+              <div key={event.title} className="grid grid-cols-[32px_1fr] gap-4 pb-8 last:pb-0">
+                <div className="relative flex justify-center">
+                  {index < events.length - 1 && (
+                    <span className={`absolute bottom-[-28px] top-7 w-px ${event.done ? 'bg-[#00C896]' : 'bg-[#E2DED6]'}`} />
+                  )}
+                  <span
+                    className={`relative z-10 grid size-7 place-items-center rounded-full border text-xs font-bold ${
+                      event.done
+                        ? 'border-[#00C896] bg-[#00C896] text-white shadow-sm'
+                        : 'border-[#E2DED6] bg-white text-[#74767B]'
+                    }`}
+                  >
+                    {event.done && <Check size={14} className="stroke-[3]" />}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[#74767B]">{event.time}</p>
+                  <h2 className="mt-1 font-bold text-[#17191D]">{event.title}</h2>
+                  <p className="mt-1 text-sm leading-6 text-[#74767B]">{event.detail}</p>
+                  <p className="mt-1 text-xs text-[#9E9E9E]">Source: {event.source}</p>
+                </div>
+              </div>
+            ))}
+          </section>
+          <aside className="h-fit rounded-2xl border border-[#22252A] bg-[#17191D] p-6 text-white shadow-md">
+            <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Songa Mobility · demo</p>
+            <h2 className="mt-3 text-xl font-bold">Quote pending</h2>
+            <dl className="mt-5 space-y-4 border-t border-white/10 pt-5 text-sm">
+              <Summary label="Produce" value="220 kg tomatoes" />
+              <Summary label="Pickup" value="Nyakundi farm, Kisii" />
+              <Summary label="Destination" value="Kisii Cold Store Demo" />
+              <Summary label="Quote" value="Awaiting provider" />
+            </dl>
+            <Link href="/storage/requests" className="mt-5 block text-sm font-bold text-[#FF5A1F] hover:text-[#FF7A45] underline underline-offset-4">
+              Back to storage request
+            </Link>
+          </aside>
         </div>
         <div className="mt-6"><DemoNotice>Fictional Songa-branded demo workflow. No authorised integration or dispatch has been used.</DemoNotice></div>
       </div>
