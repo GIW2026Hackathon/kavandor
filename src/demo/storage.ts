@@ -14,6 +14,8 @@ export type DemoFacility = {
   temperatureC: number;
   humidityPercent: number;
   readingObservedAt: string;
+  imageUrl: string;
+  imageAlt: string;
   source: 'demo_data';
   verificationStatus: 'unverified';
 };
@@ -35,6 +37,8 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 11.8,
     humidityPercent: 82,
     readingObservedAt: '2026-10-26T09:20:00Z',
+    imageUrl: '/storage/cold-store.jpg',
+    imageAlt: 'Illustrative warehouse with rows of stacked storage pallets',
     source: 'demo_data',
     verificationStatus: 'unverified',
   },
@@ -54,6 +58,8 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 21.4,
     humidityPercent: 68,
     readingObservedAt: '2026-10-26T08:45:00Z',
+    imageUrl: '/storage/ambient-store.jpg',
+    imageAlt: 'Illustrative produce market with fresh vegetables in crates',
     source: 'demo_data',
     verificationStatus: 'unverified',
   },
@@ -73,6 +79,8 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 24.2,
     humidityPercent: 56,
     readingObservedAt: '2026-10-26T07:30:00Z',
+    imageUrl: '/storage/dry-handling.jpg',
+    imageAlt: 'Illustrative maize crop being handled in a drying area',
     source: 'demo_data',
     verificationStatus: 'unverified',
   },

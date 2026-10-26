@@ -36,5 +36,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/auth/signin?error=${encodeURIComponent(error.message)}`);
   }
 
-  return NextResponse.redirect(new URL(next, origin));
+  const { data: auth } = await supabase.auth.getUser();
+  const accountRole = auth.user?.user_metadata?.account_role;
+  const roleDestination = accountRole === 'facility_operator' ? '/partners' : accountRole === 'transport_provider' ? '/transport' : '/dashboard';
+
+  return NextResponse.redirect(new URL(searchParams.has('next') ? next : roleDestination, origin));
 }

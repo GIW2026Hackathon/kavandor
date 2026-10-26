@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
@@ -118,15 +119,21 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
         )}
         {step === 2 && (
           <WizardPanel title="Selected facility" copy="Capacity and price are demonstration values, not a confirmed booking.">
-            <div className="rounded-xl border border-[#E2DED6] bg-[#FAF9F5] p-5">
-              <p className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">Demo facility</p>
-              <h2 className="mt-2 text-xl font-bold text-[#17191D]">{facility.name}</h2>
-              <p className="mt-2 text-sm text-[#74767B] font-mono">
-                {facility.availableCapacityKg.toLocaleString()} kg available · KSh {facility.pricePerUnit} / kg / day · unverified
-              </p>
-              <p className="mt-4 border-t border-[#E2DED6] pt-4 text-sm text-[#74767B]">
-                Last reported condition: <span className="font-mono font-semibold text-[#2563EB]">{facility.temperatureC}°C</span>, {facility.humidityPercent}% relative humidity.
-              </p>
+            <div className="overflow-hidden rounded-xl border border-[#E2DED6] bg-white">
+              <div className="relative aspect-[16/6] overflow-hidden bg-[#22252A]">
+                <Image src={facility.imageUrl} alt={facility.imageAlt} fill sizes="(max-width: 768px) 100vw, 680px" className="object-cover" />
+                <span className="absolute bottom-3 left-3 rounded-md bg-[#17191D]/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Illustrative image</span>
+              </div>
+              <div className="p-5">
+                <p className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">Demo facility</p>
+                <h2 className="mt-2 text-xl font-bold text-[#17191D]">{facility.name}</h2>
+                <p className="mt-2 text-sm text-[#74767B] font-mono">
+                  {facility.availableCapacityKg.toLocaleString()} kg available · KSh {facility.pricePerUnit} / kg / day · unverified
+                </p>
+                <p className="mt-4 border-t border-[#E2DED6] pt-4 text-sm text-[#74767B]">
+                  Last reported condition: <span className="font-mono font-semibold text-[#2563EB]">{facility.temperatureC}°C</span>, {facility.humidityPercent}% relative humidity.
+                </p>
+              </div>
             </div>
           </WizardPanel>
         )}
