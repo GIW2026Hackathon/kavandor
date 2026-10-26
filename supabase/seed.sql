@@ -7,6 +7,11 @@ values
   ('88888888-8888-8888-8888-888888888888', 'buyer@example.com', 'Demo Buyer', 'buyer')
 on conflict (id) do nothing;
 
+insert into public.profiles (id, email, full_name, role)
+values
+  ('88888888-8888-8888-8888-888888888888', 'buyer@example.com', 'Demo Buyer Representative', 'buyer')
+on conflict (id) do nothing;
+
 insert into public.farms (id, owner_id, name, county, location)
 values
   ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Kisii Tomato Plot', 'Kisii', 'Kisii County')
@@ -41,6 +46,7 @@ on conflict (id) do nothing;
 insert into public.buyers (id, profile_id, company_name, location)
 values
   ('66666666-6666-6666-6666-666666666666', '88888888-8888-8888-8888-888888888888', 'Demo Buyer Cooperative', 'Kisii')
+on conflict (id) do nothing;
 on conflict (id) do update set profile_id = excluded.profile_id,
   company_name = excluded.company_name, location = excluded.location;
 
