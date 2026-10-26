@@ -1,12 +1,12 @@
 import { AppShell } from '@/components/layout/app-shell';
-import { demoFacilities } from '@/demo/storage';
+import { findFacility } from '@/demo/storage';
 import { notFound } from 'next/navigation';
 
 export const instant = false;
 
 export default async function ConditionsPage({ params }: { params: Promise<{ facilityId: string }> }) {
   const { facilityId } = await params;
-  const facility = demoFacilities.find((item) => item.id === facilityId);
+  const facility = findFacility(facilityId);
   if (!facility) notFound();
   const history = [
     { time: '08:45 EAT', temperature: 11.6, humidity: 79 },

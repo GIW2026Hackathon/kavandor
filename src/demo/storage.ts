@@ -85,3 +85,17 @@ export const demoFacilities: DemoFacility[] = [
     verificationStatus: 'verified',
   },
 ];
+
+export function findFacility(id: string): DemoFacility | undefined {
+  const matchId: Record<string, string> = {
+    'f0000001-0000-0000-0000-000000000001': 'facility-01',
+    'f0000002-0000-0000-0000-000000000002': 'facility-02',
+    'f0000003-0000-0000-0000-000000000003': 'facility-03',
+    'facility-01': 'facility-01',
+    'facility-02': 'facility-02',
+    'facility-03': 'facility-03',
+  };
+  const targetId = matchId[id] || id;
+  return demoFacilities.find((item) => item.id === targetId || item.id === id);
+}
+

@@ -610,21 +610,25 @@ export class SupabaseDatabaseAdapter implements IDatabaseAdapter {
       name: f.name,
       locality: f.location,
       county: f.county as 'Kisii' | 'Nyamira',
-      facilityType: f.type as 'cold_storage' | 'ambient' | 'drying',
-      storageTypes: [f.type === 'cold_storage' ? 'cold' : f.type === 'drying' ? 'dry' : 'ambient'],
-      acceptedCommodities: ['Tomatoes', 'Avocados', 'Bananas'],
-      description: 'Verified regional cold chain hub.',
-      availableCapacityKg: 1000,
-      pricePerUnit: 3.2,
-      priceUnit: 'kg',
-      pricePeriod: 'day',
-      temperatureC: 12.0,
-      humidityPercent: 85,
+      facilityType: (f.facility_type || f.type) as 'cold_storage' | 'ambient' | 'drying',
+      storageTypes: Array.isArray(f.storage_types) && f.storage_types.length > 0
+        ? f.storage_types
+        : [f.type === 'cold_storage' ? 'cold' : f.type === 'drying' ? 'dry' : 'ambient'],
+      acceptedCommodities: Array.isArray(f.accepted_commodities) && f.accepted_commodities.length > 0
+        ? f.accepted_commodities
+        : ['Tomatoes', 'Avocados', 'Bananas'],
+      description: f.description || 'Verified regional cold chain hub.',
+      availableCapacityKg: f.type === 'cold_storage' ? 840 : f.type === 'drying' ? 1200 : 460,
+      pricePerUnit: f.price_per_unit != null ? Number(f.price_per_unit) : 3.2,
+      priceUnit: 'kg' as const,
+      pricePeriod: 'day' as const,
+      temperatureC: f.type === 'cold_storage' ? 11.8 : f.type === 'drying' ? 24.2 : 21.4,
+      humidityPercent: f.type === 'cold_storage' ? 82 : f.type === 'drying' ? 56 : 68,
       readingObservedAt: f.created_at,
       imageUrl: f.type === 'cold_storage' ? '/storage/cold-store.jpg' : f.type === 'drying' ? '/storage/dry-handling.jpg' : '/storage/ambient-store.jpg',
       imageAlt: `${f.name} facility`,
-      source: 'provider_confirmed',
-      verificationStatus: 'verified',
+      source: f.is_demo ? 'demo_data' : 'provider_confirmed',
+      verificationStatus: (f.verification_status as 'verified' | 'unverified') || 'verified',
     }));
   }
 

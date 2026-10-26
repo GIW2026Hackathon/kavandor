@@ -2,13 +2,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Droplets, Gauge, Info, ShieldAlert, Thermometer } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
-import { demoFacilities } from '@/demo/storage';
+import { findFacility } from '@/demo/storage';
 
 export const instant = false;
 
 export default async function FacilityDetailPage({ params }: { params: Promise<{ facilityId: string }> }) {
   const { facilityId } = await params;
-  const facility = demoFacilities.find((item) => item.id === facilityId);
+  const facility = findFacility(facilityId);
   if (!facility) {
     return (
       <AppShell>

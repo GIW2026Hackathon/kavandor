@@ -58,14 +58,17 @@ drop policy offers_select_own on public.offers;
 drop policy offers_insert_own on public.offers;
 drop policy offers_update_own on public.offers;
 
+drop policy if exists profiles_update_own on public.profiles;
 create policy profiles_update_own on public.profiles
   for update to authenticated
   using (id = (select auth.uid()))
   with check (id = (select auth.uid()));
 
+drop policy if exists farms_select_own on public.farms;
 create policy farms_select_own on public.farms
   for select to authenticated
   using (owner_id = (select auth.uid()));
+drop policy if exists farms_insert_own on public.farms;
 create policy farms_insert_own on public.farms
   for insert to authenticated
   with check (
@@ -75,12 +78,14 @@ create policy farms_insert_own on public.farms
       where p.id = (select auth.uid()) and p.role = 'farmer'
     )
   );
+drop policy if exists farms_update_own on public.farms;
 create policy farms_update_own on public.farms
   for update to authenticated
   using (owner_id = (select auth.uid()))
   with check (owner_id = (select auth.uid()));
 
 drop policy harvests_insert_own on public.harvests;
+drop policy if exists harvests_insert_own on public.harvests;
 create policy harvests_insert_own on public.harvests
   for insert to authenticated
   with check (
@@ -90,6 +95,7 @@ create policy harvests_insert_own on public.harvests
       where p.id = (select auth.uid()) and p.role = 'farmer'
     )
   );
+drop policy if exists harvests_delete_own on public.harvests;
 create policy harvests_delete_own on public.harvests
   for delete to authenticated
   using (
@@ -99,6 +105,7 @@ create policy harvests_delete_own on public.harvests
       where p.id = (select auth.uid()) and p.role = 'farmer'
     )
   );
+drop policy if exists harvests_update_own on public.harvests;
 create policy harvests_update_own on public.harvests
   for update to authenticated
   using (
@@ -116,18 +123,21 @@ create policy harvests_update_own on public.harvests
     )
   );
 
+drop policy if exists harvest_photos_select_own on public.harvest_photos;
 create policy harvest_photos_select_own on public.harvest_photos
   for select to authenticated
   using (exists (
     select 1 from public.harvests h
     where h.id = harvest_id and h.farmer_id = (select auth.uid())
   ));
+drop policy if exists harvest_photos_insert_own on public.harvest_photos;
 create policy harvest_photos_insert_own on public.harvest_photos
   for insert to authenticated
   with check (exists (
     select 1 from public.harvests h
     where h.id = harvest_id and h.farmer_id = (select auth.uid())
   ));
+drop policy if exists harvest_photos_delete_own on public.harvest_photos;
 create policy harvest_photos_delete_own on public.harvest_photos
   for delete to authenticated
   using (exists (
@@ -135,6 +145,7 @@ create policy harvest_photos_delete_own on public.harvest_photos
     where h.id = harvest_id and h.farmer_id = (select auth.uid())
   ));
 
+drop policy if exists assessments_select_own on public.assessments;
 create policy assessments_select_own on public.assessments
   for select to authenticated
   using (exists (
@@ -142,9 +153,11 @@ create policy assessments_select_own on public.assessments
     where h.id = harvest_id and h.farmer_id = (select auth.uid())
   ));
 
+drop policy if exists facilities_select_public on public.facilities;
 create policy facilities_select_public on public.facilities
   for select to anon, authenticated
   using (true);
+drop policy if exists facilities_insert_operator on public.facilities;
 create policy facilities_insert_operator on public.facilities
   for insert to authenticated
   with check (
@@ -154,6 +167,7 @@ create policy facilities_insert_operator on public.facilities
       where p.id = (select auth.uid()) and p.role = 'facility_operator'
     )
   );
+drop policy if exists facilities_update_operator on public.facilities;
 create policy facilities_update_operator on public.facilities
   for update to authenticated
   using (operator_id = (select auth.uid()))
@@ -165,15 +179,18 @@ create policy facilities_update_operator on public.facilities
     )
   );
 
+drop policy if exists capacity_slots_select_public on public.capacity_slots;
 create policy capacity_slots_select_public on public.capacity_slots
   for select to anon, authenticated
   using (true);
+drop policy if exists capacity_slots_insert_operator on public.capacity_slots;
 create policy capacity_slots_insert_operator on public.capacity_slots
   for insert to authenticated
   with check (exists (
     select 1 from public.facilities f
     where f.id = facility_id and f.operator_id = (select auth.uid())
   ));
+drop policy if exists capacity_slots_update_operator on public.capacity_slots;
 create policy capacity_slots_update_operator on public.capacity_slots
   for update to authenticated
   using (exists (
@@ -185,6 +202,7 @@ create policy capacity_slots_update_operator on public.capacity_slots
     where f.id = facility_id and f.operator_id = (select auth.uid())
   ));
 
+drop policy if exists reservations_select_participant on public.reservations;
 create policy reservations_select_participant on public.reservations
   for select to authenticated
   using (
@@ -197,6 +215,7 @@ create policy reservations_select_participant on public.reservations
       where f.id = facility_id and f.operator_id = (select auth.uid())
     )
   );
+drop policy if exists reservations_insert_farmer on public.reservations;
 create policy reservations_insert_farmer on public.reservations
   for insert to authenticated
   with check (
@@ -206,6 +225,7 @@ create policy reservations_insert_farmer on public.reservations
       where h.id = harvest_id and h.farmer_id = (select auth.uid())
     )
   );
+drop policy if exists reservations_update_operator on public.reservations;
 create policy reservations_update_operator on public.reservations
   for update to authenticated
   using (exists (
@@ -217,6 +237,7 @@ create policy reservations_update_operator on public.reservations
     where f.id = facility_id and f.operator_id = (select auth.uid())
   ));
 
+drop policy if exists transport_jobs_select_participant on public.transport_jobs;
 create policy transport_jobs_select_participant on public.transport_jobs
   for select to authenticated
   using (
@@ -226,6 +247,7 @@ create policy transport_jobs_select_participant on public.transport_jobs
     )
     or provider_id = (select auth.uid())
   );
+drop policy if exists transport_jobs_update_provider on public.transport_jobs;
 create policy transport_jobs_update_provider on public.transport_jobs
   for update to authenticated
   using (
@@ -237,9 +259,11 @@ create policy transport_jobs_update_provider on public.transport_jobs
   )
   with check (provider_id = (select auth.uid()));
 
+drop policy if exists buyers_select_own on public.buyers;
 create policy buyers_select_own on public.buyers
   for select to authenticated
   using (profile_id = (select auth.uid()));
+drop policy if exists buyers_insert_own on public.buyers;
 create policy buyers_insert_own on public.buyers
   for insert to authenticated
   with check (
@@ -249,11 +273,13 @@ create policy buyers_insert_own on public.buyers
       where p.id = (select auth.uid()) and p.role = 'buyer'
     )
   );
+drop policy if exists buyers_update_own on public.buyers;
 create policy buyers_update_own on public.buyers
   for update to authenticated
   using (profile_id = (select auth.uid()))
   with check (profile_id = (select auth.uid()));
 
+drop policy if exists offers_select_participant on public.offers;
 create policy offers_select_participant on public.offers
   for select to authenticated
   using (
@@ -283,6 +309,7 @@ $$;
 revoke all on function public.is_listed_harvest(uuid) from public, anon;
 grant execute on function public.is_listed_harvest(uuid) to authenticated;
 
+drop policy if exists offers_insert_buyer on public.offers;
 create policy offers_insert_buyer on public.offers
   for insert to authenticated
   with check (
@@ -296,6 +323,7 @@ create policy offers_insert_buyer on public.offers
         and p.role = 'buyer'
     )
   );
+drop policy if exists offers_update_harvest_owner on public.offers;
 create policy offers_update_harvest_owner on public.offers
   for update to authenticated
   using (exists (
@@ -307,6 +335,7 @@ create policy offers_update_harvest_owner on public.offers
     where h.id = harvest_id and h.farmer_id = (select auth.uid())
   ));
 
+drop policy if exists inventory_batches_select_participant on public.inventory_batches;
 create policy inventory_batches_select_participant on public.inventory_batches
   for select to authenticated
   using (
@@ -322,6 +351,7 @@ create policy inventory_batches_select_participant on public.inventory_batches
     )
   );
 
+drop policy if exists transactions_select_participant on public.transactions;
 create policy transactions_select_participant on public.transactions
   for select to authenticated
   using (
@@ -335,6 +365,7 @@ create policy transactions_select_participant on public.transactions
     )
   );
 
+drop policy if exists payment_records_select_participant on public.payment_records;
 create policy payment_records_select_participant on public.payment_records
   for select to authenticated
   using (exists (
@@ -352,6 +383,7 @@ create policy payment_records_select_participant on public.payment_records
       )
   ));
 
+drop policy if exists activity_events_select_own on public.activity_events;
 create policy activity_events_select_own on public.activity_events
   for select to authenticated
   using (
