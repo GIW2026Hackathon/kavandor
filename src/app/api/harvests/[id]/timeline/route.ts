@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getHarvestTimeline, toErrorResponse } from '@/lib/backend';
+import { withAuthenticatedApi } from '@/lib/api-route';
+import { getHarvestTimeline } from '@/lib/server-backend';
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  return withAuthenticatedApi(request, ['farmer', 'buyer', 'facility_operator', 'transport_provider', 'operations_admin'], async ({ supabase }) => {
     const { id } = await params;
-    return NextResponse.json({ timeline: getHarvestTimeline(id) });
-  } catch (error) {
-    const payload = toErrorResponse(error);
-    const status = error instanceof Error && 'status' in error ? Number((error as { status: number }).status) : 400;
-    return NextResponse.json(payload, { status });
-  }
+    const timeline = await getHarvestTimeline(supabase, id);
+    return NextResponse.json({ timeline });
+  });
 }

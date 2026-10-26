@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createInventoryBatch, requireAuth, toErrorResponse } from '@/lib/backend';
+import { readJson } from '@/lib/api-errors';
+import { withAuthenticatedApi } from '@/lib/api-route';
+import { receiveInventory } from '@/lib/server-backend';
 
 export async function POST(request: Request) {
-  try {
-    const actor = requireAuth(request, ['farmer', 'operations_admin']);
-    const payload = await request.json();
-    const batch = createInventoryBatch(payload, actor);
-    return NextResponse.json({ batch }, { status: 201 });
-  } catch (error) {
-    const payload = toErrorResponse(error);
-    const status = error instanceof Error && 'status' in error ? Number((error as { status: number }).status) : 400;
-    return NextResponse.json(payload, { status });
-  }
+  return withAuthenticatedApi(request, ['facility_operator', 'operations_admin'], async ({ supabase }) => {
+    const batch = await receiveInventory(supabase, await readJson(request));
+    return NextResponse.json({ inventoryBatch: batch }, { status: 201 });
+  });
+}
+
+export async function GET(request: Request) {
+  return withAuthenticatedApi(request, ['farmer', 'facility_operator', 'operations_admin'], async ({ supabase }) => {
+    const { data, error } = await supabase.from('inventory_batches').select('*')
+      .order('received_at', { ascending: false }).limit(100);
+    if (error) throw error;
+    return NextResponse.json({ inventoryBatches: data ?? [] });
+  });
 }

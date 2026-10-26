@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createOffer, requireAuth, toErrorResponse } from '@/lib/backend';
+import { readJson } from '@/lib/api-errors';
+import { withAuthenticatedApi } from '@/lib/api-route';
+import { createOffer } from '@/lib/server-backend';
 
 export async function POST(request: Request) {
-  try {
-    const actor = requireAuth(request, ['buyer', 'operations_admin']);
-    const payload = await request.json();
-    const offer = createOffer(payload, actor);
+  return withAuthenticatedApi(request, ['buyer'], async ({ actor, supabase }) => {
+    const offer = await createOffer(supabase, actor, await readJson(request));
     return NextResponse.json({ offer }, { status: 201 });
-  } catch (error) {
-    const payload = toErrorResponse(error);
-    const status = error instanceof Error && 'status' in error ? Number((error as { status: number }).status) : 400;
-    return NextResponse.json(payload, { status });
-  }
+  });
+}
+
+export async function GET(request: Request) {
+  return withAuthenticatedApi(request, ['farmer', 'buyer', 'operations_admin'], async ({ supabase }) => {
+    const { data, error } = await supabase.from('offers').select('*')
+      .order('created_at', { ascending: false }).limit(100);
+    if (error) throw error;
+    return NextResponse.json({ offers: data ?? [] });
+  });
 }
