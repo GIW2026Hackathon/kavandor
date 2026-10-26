@@ -1,25 +1,15 @@
 import { NextResponse } from 'next/server';
+import { createReservation, requireAuth, toErrorResponse } from '@/lib/backend';
 
 export async function POST(request: Request) {
-  const payload = await request.json();
-
-  if (!payload?.facilityId || !payload?.quantityKg) {
-    return NextResponse.json(
-      { error: { code: 'BAD_REQUEST', message: 'facilityId and quantityKg are required.' } },
-      { status: 400 },
-    );
+  try {
+    const actor = requireAuth(request, ['farmer', 'operations_admin']);
+    const payload = await request.json();
+    const reservation = createReservation(payload, actor);
+    return NextResponse.json({ reservation }, { status: 201 });
+  } catch (error) {
+    const payload = toErrorResponse(error);
+    const status = error instanceof Error && 'status' in error ? Number((error as { status: number }).status) : 400;
+    return NextResponse.json(payload, { status });
   }
-
-  return NextResponse.json(
-    {
-      ok: true,
-      reservation: {
-        id: 'reservation-01',
-        facilityId: payload.facilityId,
-        quantityKg: payload.quantityKg,
-        status: 'pending',
-      },
-    },
-    { status: 201 },
-  );
 }
