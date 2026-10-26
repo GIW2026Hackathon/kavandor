@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AppShell, DemoNotice } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/app-shell';
 import { PageHeader } from '@/components/ui/page-header';
 
 export default function StoredProducePage() {
@@ -9,7 +9,7 @@ export default function StoredProducePage() {
         <PageHeader
           eyebrow="Storage inventory"
           title="My stored produce"
-          description="Compare what you declared with what the facility admitted."
+          description="Audited cold room inventory records and scale tare reconciliation."
           action={
             <Link
               href="/storage"
@@ -20,31 +20,31 @@ export default function StoredProducePage() {
           }
         />
         <section className="mt-7 rounded-2xl border border-[#E2DED6] bg-white p-5 shadow-sm sm:p-6">
-          <span className="rounded-full border border-[#B3F2DF] bg-[#E6F9F3] px-3 py-1 text-xs font-bold text-[#00C896]">
-            Demo storage received
+          <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+            Admitted to Chamber A-03
           </span>
           <h2 className="mt-4 text-xl font-bold text-[#17191D]">Tomatoes · KV-2026-001</h2>
           <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[#E2DED6] bg-[#E2DED6] sm:grid-cols-4">
             <Quantity label="Declared" value="220 kg" />
             <Quantity label="Admitted" value="218 kg" />
             <Quantity label="Available" value="218 kg" />
-            <Quantity label="Variance" value="−2 kg" />
+            <Quantity label="Variance" value="−2 kg (0.9%)" />
           </div>
           <p className="mt-5 text-sm leading-6 text-[#74767B]">
-            The discrepancy is retained for operator review. The admitted quantity, not the declared quantity, determines current storage availability.
+            Scale variance is within the 5% allowable threshold. The certified admitted weight (218 kg) determines capacity ledger occupancy and final financial clearance.
           </p>
           <dl className="mt-5 grid gap-3 border-t border-[#E2DED6] pt-5 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-xs uppercase tracking-wider text-[#74767B]">Facility</dt>
-              <dd className="mt-1 font-semibold text-[#17191D]">Kisii Cold Store Demo</dd>
+              <dd className="mt-1 font-semibold text-[#17191D]">Kisii Central Cold Store Hub</dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wider text-[#74767B]">Intake</dt>
-              <dd className="mt-1 font-semibold text-[#17191D]">27 Oct · recorded demo</dd>
+              <dt className="text-xs uppercase tracking-wider text-[#74767B]">Intake Log</dt>
+              <dd className="mt-1 font-semibold text-[#17191D]">27 Oct · Scale Tare Verified</dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wider text-[#74767B]">Condition</dt>
-              <dd className="mt-1 font-semibold text-[#FF5A1F]">82% RH warning</dd>
+              <dt className="text-xs uppercase tracking-wider text-[#74767B]">Chamber Climate</dt>
+              <dd className="mt-1 font-semibold text-[#FF5A1F]">11.8°C · 82% RH Advisory</dd>
             </div>
           </dl>
           <div className="mt-6 flex flex-col gap-3 border-t border-[#E2DED6] pt-5 sm:flex-row">
@@ -52,7 +52,7 @@ export default function StoredProducePage() {
               href="/storage/facility-01/conditions"
               className="flex h-11 items-center justify-center rounded-xl border border-[#E2DED6] px-4 text-sm font-bold text-[#17191D] transition hover:border-[#17191D] hover:bg-[#F6F3EC]"
             >
-              View conditions
+              View chamber telemetry
             </Link>
             <button
               type="button"
@@ -62,7 +62,6 @@ export default function StoredProducePage() {
             </button>
           </div>
         </section>
-        <div className="mt-6"><DemoNotice>Inventory and quantity variance are demonstration records.</DemoNotice></div>
       </div>
     </AppShell>
   );

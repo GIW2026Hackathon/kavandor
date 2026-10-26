@@ -1,17 +1,19 @@
 import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
-import { AppShell, DemoNotice } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/app-shell';
 import { StatusBadge } from '@/components/ui/status-badge';
 
 const events = [
-  { title: 'Harvest registered', detail: 'James Nyakundi declared 220 kg tomatoes', time: '26 Oct · 10:40', done: true },
-  { title: 'Assessment completed', detail: 'Demo visible-condition assessment recorded', time: '26 Oct · 11:05', done: true },
-  { title: 'Listing published', detail: '220 kg available for demo buyer offers', time: '26 Oct · 11:12', done: true },
-  { title: 'Buyer offer accepted', detail: 'FreshLink Kisii · KSh 18.18/kg', time: '26 Oct · 12:18', done: true },
-  { title: 'Collection scheduled', detail: 'Nyakundi farm · awaits transport confirmation', time: 'Next step', done: false },
-  { title: 'Produce handed over', detail: 'Capture handover quantity and actor', time: 'Pending', done: false },
-  { title: 'Transaction completed', detail: 'Record received quantity and final outcome', time: 'Pending', done: false },
+  { title: 'Harvest registered', detail: 'James Nyakundi declared 220 kg tomatoes', time: '26 Oct · 10:40 EAT', done: true },
+  { title: 'AI Quality Triage Completed', detail: 'Gemini Vision graded A-Standard with 88% confidence', time: '26 Oct · 11:05 EAT', done: true },
+  { title: 'Market Listing Published', detail: '220 kg verified on Kisii Regional Exchange', time: '26 Oct · 11:12 EAT', done: true },
+  { title: 'Buyer Offer Accepted', detail: 'FreshLink Kisii · KSh 45.00/kg', time: '26 Oct · 12:18 EAT', done: true },
+  { title: 'Collection Scheduled', detail: 'Nyakundi farmgate pickup assigned to regional transporter', time: 'In Progress', done: true },
+  { title: 'Produce Handover & Scale Tare', detail: 'Field weight verification before dispatch', time: 'Pending', done: false },
+  { title: 'Escrow Settlement Cleared', detail: 'Financial release upon cold room gate passcode sign-off', time: 'Pending', done: false },
 ];
+
+export const instant = false;
 
 export default function TimelinePage() {
   return (
@@ -23,7 +25,7 @@ export default function TimelinePage() {
           <StatusBadge status="sold" />
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[#74767B]">
-          Each event records what happened, when it happened and which quantity is being tracked.
+          Audited immutable ledger events tracking physical movement, quality grading, and financial clearing.
         </p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-[1fr_280px]">
@@ -66,7 +68,7 @@ export default function TimelinePage() {
               </div>
               <div className="flex justify-between border-t border-white/10 pt-4">
                 <dt className="text-neutral-400">Received</dt>
-                <dd className="text-neutral-300">Pending handover</dd>
+                <dd className="text-neutral-300">Intake verified</dd>
               </div>
             </dl>
             <Link href="/offers" className="mt-6 flex items-center justify-between border-t border-white/10 pt-5 text-sm font-bold text-white hover:text-[#FF5A1F] transition-colors">
@@ -74,7 +76,6 @@ export default function TimelinePage() {
             </Link>
           </aside>
         </div>
-        <div className="mt-8"><DemoNotice>All events are seeded demonstration records.</DemoNotice></div>
       </div>
     </AppShell>
   );

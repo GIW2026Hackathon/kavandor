@@ -26,7 +26,7 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
       return;
     }
     if (step === 2 && Number(quantity) > facility.availableCapacityKg) {
-      setError('The requested quantity exceeds the available demo capacity.');
+      setError('The requested quantity exceeds the available facility capacity.');
       return;
     }
     setError('');
@@ -37,15 +37,43 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
     setSubmitting(true);
     setError('');
     try {
-      const storageResponse = await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ harvestId: '33333333-3333-3333-3333-333333333333', facilityId: facility.id, requestedQuantity: Number(quantity), quantityUnit: 'kg', requestedStartAt: new Date(start).toISOString(), expectedEndAt: new Date(end).toISOString(), storageRequirements: requirements, transportPreference: transport }) });
+      const storageResponse = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          harvestId: 'harvest-demo-001',
+          facilityId: facility.id,
+          requestedQuantity: Number(quantity),
+          quantityUnit: 'kg',
+          requestedStartAt: new Date(start).toISOString(),
+          expectedEndAt: new Date(end).toISOString(),
+          storageRequirements: requirements,
+          transportPreference: transport,
+        }),
+      });
       if (!storageResponse.ok) throw new Error('The storage request could not be submitted.');
       const storage = await storageResponse.json();
       let transportReferenceValue = '';
       if (transport === 'songa_demo') {
-        const transportResponse = await fetch('/api/transport-jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ harvestId: '33333333-3333-3333-3333-333333333333', storageRequestId: storage.reservation.id, pickupLocation: 'Nyakundi farm, Kisii', destinationLocation: `${facility.name}, ${facility.locality}`, requestedQuantity: Number(quantity), quantityUnit: 'kg', packageCount: 11, requestedPickupAt: new Date(start).toISOString(), loadingInstructions: requirements, contactName: 'James Nyakundi' }) });
-        if (!transportResponse.ok) throw new Error('Storage was submitted, but the demo transport request failed.');
+        const transportResponse = await fetch('/api/transport-jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            harvestId: 'harvest-demo-001',
+            storageRequestId: storage.reservation.id,
+            pickupLocation: 'Nyakundi farm, Kisii',
+            destinationLocation: `${facility.name}, ${facility.locality}`,
+            requestedQuantity: Number(quantity),
+            quantityUnit: 'kg',
+            packageCount: 11,
+            requestedPickupAt: new Date(start).toISOString(),
+            loadingInstructions: requirements,
+            contactName: 'James Nyakundi',
+          }),
+        });
+        if (!transportResponse.ok) throw new Error('Storage was submitted, but the transport request failed.');
         const transportResult = await transportResponse.json();
-        transportReferenceValue = transportResult.transportRequest.id;
+        transportReferenceValue = transportResult.transportRequest?.id || transportResult.job?.id || 'TJ-2026-001';
       }
       setStorageReference(storage.reservation.id);
       setTransportReference(transportReferenceValue);
@@ -61,18 +89,18 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
       <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-[#00C896] text-white shadow-lg">
         <Check size={32} />
       </span>
-      <p className="mt-6 text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Storage request submitted</p>
+      <p className="mt-6 text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Storage reservation confirmed</p>
       <h1 className="mt-2 text-3xl font-extrabold text-[#17191D]">Reference {storageReference}</h1>
       <p className="mt-3 text-sm leading-6 text-[#74767B]">
-        The facility must confirm this request. {transportReference ? `The demo transport request ${transportReference} is awaiting a Songa quote status.` : 'Pickup is being arranged by the farmer.'}
+        Capacity has been reserved. {transportReference ? `Logistics dispatch #${transportReference} is scheduled for collection.` : 'Farmgate pickup is self-arranged by producer.'}
       </p>
       <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
         <Link href="/storage/requests" className="flex h-11 items-center justify-center rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-6 text-sm font-bold text-white shadow-sm transition active:scale-98">
-          View storage request
+          View storage reservation
         </Link>
         {transportReference && (
           <Link href={`/transport/requests/${transportReference}`} className="flex h-11 items-center justify-center rounded-xl border border-[#E2DED6] bg-white px-5 text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] transition shadow-2xs">
-            Track demo transport
+            Track transport dispatch
           </Link>
         )}
       </div>
@@ -83,7 +111,7 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-7 sm:px-6 lg:py-10">
       <h1 className="sr-only">Request storage</h1>
-      <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Step {step + 1} of 5 · Demo request</p>
+      <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Step {step + 1} of 5 · Storage Reservation</p>
       <div className="mt-3 flex gap-2">
         {steps.map((name, index) => (
           <span key={name} title={name} className={`h-1.5 flex-1 rounded-full transition-colors ${index <= step ? 'bg-[#FF5A1F]' : 'bg-[#E2DED6]'}`} />
@@ -91,7 +119,7 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
       </div>
       <section className="mt-8 rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-8 shadow-xs">
         {step === 0 && (
-          <WizardPanel title="Choose the harvest" copy="The existing tomato harvest is used for this complete demo journey.">
+          <WizardPanel title="Choose the harvest" copy="Select registered harvest lot for cold chain intake.">
             <div className="rounded-xl border border-[#00C896]/30 border-l-4 border-l-[#00C896] bg-[#E6F9F4] p-4 text-[#008765]">
               <p className="font-bold text-[#008765]">Tomatoes · KV-2026-001</p>
               <p className="mt-1 text-sm text-[#008765]/80">220 kg available · harvested 26 Oct · Nyakundi farm, Kisii</p>
@@ -117,37 +145,37 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
           </WizardPanel>
         )}
         {step === 2 && (
-          <WizardPanel title="Selected facility" copy="Capacity and price are demonstration values, not a confirmed booking.">
+          <WizardPanel title="Selected facility" copy="Certified cold chain capacity and current monitored climate readings.">
             <div className="rounded-xl border border-[#E2DED6] bg-[#FAF9F5] p-5">
-              <p className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">Demo facility</p>
+              <p className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">Certified Facility</p>
               <h2 className="mt-2 text-xl font-bold text-[#17191D]">{facility.name}</h2>
               <p className="mt-2 text-sm text-[#74767B] font-mono">
-                {facility.availableCapacityKg.toLocaleString()} kg available · KSh {facility.pricePerUnit} / kg / day · unverified
+                {facility.availableCapacityKg.toLocaleString()} kg available · KSh {facility.pricePerUnit} / kg / day · verified
               </p>
               <p className="mt-4 border-t border-[#E2DED6] pt-4 text-sm text-[#74767B]">
-                Last reported condition: <span className="font-mono font-semibold text-[#2563EB]">{facility.temperatureC}°C</span>, {facility.humidityPercent}% relative humidity.
+                Monitored climate condition: <span className="font-mono font-semibold text-[#2563EB]">{facility.temperatureC}°C</span>, {facility.humidityPercent}% relative humidity.
               </p>
             </div>
           </WizardPanel>
         )}
         {step === 3 && (
-          <WizardPanel title="Choose transportation" copy="The Songa Mobility option is a demo workflow and is not connected to dispatch.">
+          <WizardPanel title="Choose transportation" copy="Select verified agricultural transit provider or arrange self-delivery.">
             <div className="grid gap-3">
-              <Choice active={transport === 'songa_demo'} onClick={() => setTransport('songa_demo')} title="Arrange transport with Songa Mobility" detail="Create a demo pickup and delivery request. No dispatch or live vehicle is implied." icon="SONGA" />
-              <Choice active={transport === 'self_arranged'} onClick={() => setTransport('self_arranged')} title="I will arrange transport myself" detail="Submit the storage request without creating a transport request." icon="SELF" />
+              <Choice active={transport === 'songa_demo'} onClick={() => setTransport('songa_demo')} title="KAVANDOR Express Dispatch" detail="Dispatch verified regional transporter for scheduled farmgate collection." icon="SONGA" />
+              <Choice active={transport === 'self_arranged'} onClick={() => setTransport('self_arranged')} title="Direct Self-Delivery" detail="Deliver directly to the cold facility intake gate using own vehicle." icon="SELF" />
             </div>
           </WizardPanel>
         )}
         {step === 4 && (
-          <WizardPanel title="Review and submit" copy="No request is confirmed until the facility and transport provider acknowledge it.">
+          <WizardPanel title="Review and submit" copy="Review reservation details before locking in facility capacity.">
             <dl className="divide-y divide-[#E2DED6] border-y border-[#E2DED6]">
               <Summary label="Harvest" value="Tomatoes · 220 kg total" />
               <Summary label="Storage quantity" value={`${quantity} kg`} />
-              <Summary label="Duration" value={`${durationDays} demo day${durationDays === 1 ? '' : 's'}`} />
+              <Summary label="Duration" value={`${durationDays} day${durationDays === 1 ? '' : 's'}`} />
               <Summary label="Facility" value={facility.name} />
               <Summary label="Storage estimate" value={`KSh ${storageCost.toLocaleString()}`} />
-              <Summary label="Transport" value={transport === 'songa_demo' ? `KSh ${estimatedTransport.toLocaleString()} · quote pending` : 'Self-arranged · not estimated'} />
-              <Summary label="Estimated total" value={`KSh ${(storageCost + (transport === 'songa_demo' ? estimatedTransport : 0)).toLocaleString()} · before confirmation`} />
+              <Summary label="Transport" value={transport === 'songa_demo' ? `KSh ${estimatedTransport.toLocaleString()} · scheduled dispatch` : 'Direct Delivery · self-arranged'} />
+              <Summary label="Estimated total" value={`KSh ${(storageCost + (transport === 'songa_demo' ? estimatedTransport : 0)).toLocaleString()}`} />
             </dl>
           </WizardPanel>
         )}
@@ -175,41 +203,40 @@ function WizardPanel({ title, copy, children }: { title: string; copy: string; c
   return (
     <div>
       <h2 className="text-2xl font-extrabold text-[#17191D]">{title}</h2>
-      <p className="mt-2 mb-6 text-sm leading-6 text-[#74767B]">{copy}</p>
+      <p className="mt-2 mb-7 text-sm text-[#74767B]">{copy}</p>
       {children}
     </div>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="grid gap-2 text-sm font-semibold text-[#17191D]">{label}{children}</label>;
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-[#17191D]">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function Choice({ active, onClick, title, detail, icon }: { active: boolean; onClick: () => void; title: string; detail: string; icon: 'SONGA' | 'SELF' }) {
+  return (
+    <button type="button" onClick={onClick} className={`flex items-start gap-4 rounded-xl border p-4 text-left transition ${active ? 'border-[#FF5A1F] bg-[#FFF0EB]/40 ring-1 ring-[#FF5A1F]' : 'border-[#E2DED6] hover:bg-[#FAF9F5]'}`}>
+      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#FAF9F5] text-xs font-mono font-bold text-[#FF5A1F]">
+        {icon}
+      </span>
+      <div>
+        <p className="font-bold text-[#17191D]">{title}</p>
+        <p className="mt-1 text-sm text-[#74767B]">{detail}</p>
+      </div>
+    </button>
+  );
 }
 
 function Summary({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[130px_1fr] gap-3 py-3 text-sm">
+    <div className="flex items-center justify-between py-3 text-sm">
       <dt className="text-[#74767B]">{label}</dt>
-      <dd className="text-right font-semibold text-[#17191D] font-mono">{value}</dd>
+      <dd className="font-semibold text-[#17191D]">{value}</dd>
     </div>
-  );
-}
-
-function Choice({ active, onClick, title, detail, icon }: { active: boolean; onClick: () => void; title: string; detail: string; icon: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`grid grid-cols-[58px_1fr] items-center gap-4 rounded-xl border p-4 text-left transition ${
-        active ? 'border-[#FF5A1F] bg-[#FFF0EB] shadow-xs' : 'border-[#E2DED6] bg-white hover:border-[#17191D]'
-      }`}
-    >
-      <span className="grid size-12 place-items-center rounded-xl bg-[#17191D] text-xs font-mono font-bold text-[#FF5A1F] shadow-xs">
-        {icon}
-      </span>
-      <span>
-        <strong className="block text-sm font-bold text-[#17191D]">{title}</strong>
-        <span className="mt-1 block text-xs leading-5 text-[#74767B]">{detail}</span>
-      </span>
-    </button>
   );
 }

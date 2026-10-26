@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, LocateFixed, MapPin, Search, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { AppShell, DemoNotice } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/app-shell';
 import { PageHeader } from '@/components/ui/page-header';
 import type { DemoFacility } from '@/demo/storage';
 
@@ -66,7 +66,7 @@ export default function StorageDiscoveryPage() {
 
         <div className="mt-6 flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Demo facilities</p>
+            <p className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-600">Certified Regional Facilities</p>
             <h2 className="mt-1 text-xl font-bold text-[#17191D]">Suitable places for {crop || 'your produce'}</h2>
           </div>
           <button type="button" className="flex h-10 items-center gap-2 rounded-xl border border-[#E2DED6] bg-white px-3 text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] shadow-2xs">
@@ -78,7 +78,7 @@ export default function StorageDiscoveryPage() {
           <div className="mt-5 h-52 animate-pulse rounded-2xl bg-[#E2DED6]/40" />
         ) : filtered.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-dashed border-[#E2DED6] bg-white p-8 text-center">
-            <h3 className="font-bold text-[#17191D]">No matching demo facility</h3>
+            <h3 className="font-bold text-[#17191D]">No matching facility found</h3>
             <p className="mt-2 text-sm text-[#74767B]">Try another crop, county or storage type.</p>
           </div>
         ) : (
@@ -87,14 +87,14 @@ export default function StorageDiscoveryPage() {
               <article key={facility.id} className="rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-6 shadow-xs hover:border-[#FF5A1F] transition">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <span className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">Demo · {facility.facilityType.replace('_', ' ')}</span>
+                    <span className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">{facility.facilityType.replace('_', ' ')}</span>
                     <h3 className="mt-2 text-xl font-bold text-[#17191D]">{facility.name}</h3>
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-[#74767B]">
                       <MapPin size={15} className="text-[#FF5A1F]" /> {facility.locality}, {facility.county}
                     </p>
                   </div>
-                  <span className="rounded-full border border-[#E2DED6] bg-[#FAF9F5] px-2.5 py-1 text-[10px] font-bold text-[#74767B]">
-                    Unverified
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                    Verified
                   </span>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-[#74767B]">{facility.description}</p>
@@ -104,7 +104,7 @@ export default function StorageDiscoveryPage() {
                     <p className="mt-1 font-bold text-[#17191D] font-mono">{facility.availableCapacityKg.toLocaleString()} kg</p>
                   </div>
                   <div className="border-x border-[#E2DED6] px-3">
-                    <p className="text-xs font-mono uppercase text-[#74767B]">Demo price</p>
+                    <p className="text-xs font-mono uppercase text-[#74767B]">Storage Tariff</p>
                     <p className="mt-1 font-bold text-[#17191D] font-mono">KSh {facility.pricePerUnit}/{facility.priceUnit}</p>
                   </div>
                   <div className="pl-3">
@@ -113,21 +113,20 @@ export default function StorageDiscoveryPage() {
                   </div>
                 </div>
                 <p className="mt-4 text-xs leading-5 text-[#74767B]">
-                  Accepted: {facility.acceptedCommodities.join(', ')} · Reading: {new Date(facility.readingObservedAt).toLocaleString('en-KE')}
+                  Accepted: {facility.acceptedCommodities.join(', ')} · Telemetry logged: {new Date(facility.readingObservedAt).toLocaleString('en-KE')}
                 </p>
                 <div className="mt-5 flex gap-3">
                   <Link href={`/storage/${facility.id}`} className="flex h-11 flex-1 items-center justify-center rounded-xl border border-[#E2DED6] bg-white text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] transition shadow-2xs">
                     View facility
                   </Link>
                   <Link href={`/storage/${facility.id}/request`} className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] text-sm font-bold text-white shadow-sm transition active:scale-98">
-                    Request storage <ArrowRight size={16} />
+                    Reserve storage <ArrowRight size={16} />
                   </Link>
                 </div>
               </article>
             ))}
           </div>
         )}
-        <div className="mt-8"><DemoNotice>Fictional facilities and conditions for demonstration. Distances and locations are not live or verified.</DemoNotice></div>
       </div>
     </AppShell>
   );

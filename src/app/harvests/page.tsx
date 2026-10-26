@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import { AppShell, DemoNotice } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/app-shell';
 import { HarvestCard } from '@/components/dashboard/harvest-card';
 import { PageHeader } from '@/components/ui/page-header';
 
@@ -11,7 +11,7 @@ export default function HarvestsPage() {
         <PageHeader
           eyebrow="Farmer workspace"
           title="My harvests"
-          description="Track registered produce from intake to final outcome."
+          description="Track registered produce from intake to final preservation or market outcome."
           action={
             <Link
               href="/harvests/new"
@@ -22,10 +22,9 @@ export default function HarvestsPage() {
           }
         />
         <section className="mt-7 rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-6 shadow-xs">
-          <HarvestCard crop="Tomatoes" quantity={220} unit="kg" harvestDate="26 Oct 2026" location="Nyakundi farm · Kisii" status="assessed" action="Review harvest" href="/harvests/demo-harvest-001" />
+          <HarvestCard crop="Tomatoes" quantity={220} unit="kg" harvestDate="26 Oct 2026" location="Nyakundi farm · Kisii" status="assessed" action="Review harvest" href="/harvests/harvest-demo-001" />
           <HarvestCard crop="Bananas" quantity={8} unit="crate" harvestDate="24 Oct 2026" location="Nyakundi farm · Kisii" status="offer_pending" action="Review offer" href="/offers" />
         </section>
-        <div className="mt-8"><DemoNotice /></div>
       </div>
     </AppShell>
   );

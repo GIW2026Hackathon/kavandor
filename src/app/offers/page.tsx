@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft, Check, PackageCheck, ShieldCheck, X } from 'lucide-react';
 import { useState } from 'react';
-import { AppShell, DemoNotice } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/app-shell';
 import { demoTomatoOffer, formatCurrency } from '@/components/demo/session';
 
 export default function OffersPage() {
@@ -33,7 +33,7 @@ export default function OffersPage() {
           <article className="rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-7 shadow-xs">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-mono font-bold uppercase text-[#FF5A1F]">Demo buyer</p>
+                <p className="text-xs font-mono font-bold uppercase text-emerald-600">Verified Institutional Buyer</p>
                 <h2 className="mt-2 text-2xl font-bold text-[#17191D]">FreshLink Kisii</h2>
                 <p className="mt-1 text-sm text-[#74767B]">Offer received 26 Oct · Expires {demoTomatoOffer.expiresAt}</p>
               </div>
@@ -89,7 +89,7 @@ export default function OffersPage() {
                   <p className="font-bold">Agreement recorded</p>
                   <p className="mt-1 text-sm text-[#008765]/80">220 kg reserved for FreshLink Kisii.</p>
                 </div>
-                <Link href="/harvests/demo-harvest-001/timeline" className="text-sm font-bold text-[#008765] underline underline-offset-4">
+                <Link href="/harvests/harvest-demo-001/timeline" className="text-sm font-bold text-[#008765] underline underline-offset-4">
                   View traceability
                 </Link>
               </div>
@@ -99,9 +99,9 @@ export default function OffersPage() {
           <aside className="rounded-2xl border border-[#22252A] bg-[#17191D] p-5 text-white sm:p-6 shadow-md">
             <PackageCheck size={28} className="text-[#FF5A1F]" />
             <p className="mt-5 text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Quantity protection</p>
-            <h2 className="mt-2 text-xl font-bold text-white">No quantity can be sold twice</h2>
+            <h2 className="mt-2 text-xl font-bold text-white">Atomic allocation guarantee</h2>
             <p className="mt-3 text-sm leading-6 text-neutral-300">
-              Accepting this offer reserves the full declared quantity. Conflicting offers remain unavailable until the reservation is released.
+              Accepting this offer locks the declared quantity into escrow. Conflicting purchase offers are automatically closed.
             </p>
             <div className="mt-6 border-t border-white/10 pt-5">
               <p className="text-xs font-mono uppercase text-neutral-400">Available quantity</p>
@@ -109,16 +109,15 @@ export default function OffersPage() {
             </div>
           </aside>
         </div>
-        <div className="mt-8"><DemoNotice>Demo offer and terms. No real buyer or payment is connected.</DemoNotice></div>
       </div>
 
       {confirming && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-xs p-4" role="dialog" aria-modal="true" aria-labelledby="offer-confirm-title">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#E2DED6]">
             <ShieldCheck size={32} className="text-[#FF5A1F]" />
-            <h2 id="offer-confirm-title" className="mt-4 text-xl font-bold text-[#17191D]">Accept this offer?</h2>
+            <h2 id="offer-confirm-title" className="mt-4 text-xl font-bold text-[#17191D]">Accept this purchase offer?</h2>
             <p className="mt-2 text-sm leading-6 text-[#74767B]">
-              This reserves all 220 kg for FreshLink Kisii at KSh 18.18/kg. The agreed quantity cannot be accepted by another buyer.
+              This reserves all 220 kg for FreshLink Kisii at KSh 45.00/kg. The agreed quantity will be committed and cannot be accepted by another buyer.
             </p>
             <div className="mt-6 flex gap-3">
               <button type="button" onClick={() => setConfirming(false)} className="h-11 flex-1 rounded-xl border border-[#E2DED6] text-sm font-bold text-[#74767B] hover:bg-[#FAF9F5]">

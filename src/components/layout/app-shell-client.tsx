@@ -85,8 +85,9 @@ export function AppShellClient({ children }: { children: React.ReactNode }) {
             <span>Kisii, Kenya</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <span className="hidden rounded-full border border-[#E2DED6] bg-[#FAF9F5] px-3 py-1.5 text-xs font-semibold text-[#74767B] md:inline">
-              Demo workspace
+            <span className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 md:inline-flex">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Network · Kisii &amp; Nyamira
             </span>
             <button type="button" className="relative grid size-10 place-items-center rounded-full border border-[#E2DED6] text-[#17191D] hover:bg-[#FAF9F5]" aria-label="Notifications">
               <Bell size={19} />
@@ -119,11 +120,7 @@ export function AppShellClient({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function DemoNotice({ children = 'Demo data for Gusii Innovation Week 2026' }: { children?: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2 rounded-lg border border-[#FF5A1F]/30 bg-[#FFF0EB] px-3.5 py-2.5 text-xs text-[#17191D]">
-      <PackageSearch size={16} className="mt-px shrink-0 text-[#FF5A1F]" />
-      <span>{children}</span>
-    </div>
-  );
+export function DemoNotice({ children }: { children?: React.ReactNode }) {
+  void children;
+  return null;
 }

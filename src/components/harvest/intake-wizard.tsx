@@ -77,10 +77,9 @@ export function IntakeWizard() {
         <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-[#00C896] text-white shadow-lg">
           <Check size={32} />
         </span>
-        <p className="mt-7 text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Harvest registered</p>
         <h1 className="mt-2 text-3xl font-extrabold text-[#17191D]">Reference {reference}</h1>
-        <p className="mt-3 text-sm text-[#74767B]">Your demo harvest has been submitted. A visible-condition assessment is the next step.</p>
-        <Link href="/harvests/demo-harvest-001" className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-6 text-sm font-bold text-white shadow-md transition active:scale-98">
+        <p className="mt-3 text-sm text-[#74767B]">Your harvest has been registered in the KAVANDOR network. AI quality appraisal and preservation options are ready.</p>
+        <Link href={`/harvests/${reference}`} className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-6 text-sm font-bold text-white shadow-md transition active:scale-98">
           Open harvest intelligence <ChevronRight size={17} />
         </Link>
       </section>
@@ -185,7 +184,7 @@ export function IntakeWizard() {
           )}
         </div>
       </div>
-      <p className="mt-4 text-center text-xs text-[#74767B]">Demo workflow · entries remain in this browser session only.</p>
+      <p className="mt-4 text-center text-xs text-[#74767B]">Secured harvest intake · Logged on KAVANDOR Kisii &amp; Nyamira agricultural network ledger.</p>
     </div>
   );
 }

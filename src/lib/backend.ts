@@ -322,6 +322,15 @@ export function toErrorResponse(error: unknown) {
     };
   }
 
+  if (error instanceof Error) {
+    return {
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error.message,
+      },
+    };
+  }
+
   return {
     error: {
       code: 'INTERNAL_SERVER_ERROR',

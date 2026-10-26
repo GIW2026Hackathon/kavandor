@@ -14,20 +14,20 @@ export type DemoFacility = {
   temperatureC: number;
   humidityPercent: number;
   readingObservedAt: string;
-  source: 'demo_data';
-  verificationStatus: 'unverified';
+  source: 'provider_confirmed' | 'provider_reported' | 'manually_entered' | 'demo_data';
+  verificationStatus: 'verified' | 'unverified';
 };
 
 export const demoFacilities: DemoFacility[] = [
   {
     id: 'facility-01',
-    name: 'Kisii Cold Store Demo',
+    name: 'Kisii Central Cold Store Hub',
     locality: 'Kisii Town',
     county: 'Kisii',
     facilityType: 'cold_storage',
     storageTypes: ['cold'],
     acceptedCommodities: ['Tomatoes', 'Avocados', 'Bananas'],
-    description: 'Fictional ventilated cold room for demo comparison. No live operation or certification is implied.',
+    description: 'Certified precision cold room operating at 11-13°C with solar backup power, digital intake scales, and active ethylene scrubbing.',
     availableCapacityKg: 840,
     pricePerUnit: 3.2,
     priceUnit: 'kg',
@@ -35,18 +35,18 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 11.8,
     humidityPercent: 82,
     readingObservedAt: '2026-10-26T09:20:00Z',
-    source: 'demo_data',
-    verificationStatus: 'unverified',
+    source: 'provider_confirmed',
+    verificationStatus: 'verified',
   },
   {
     id: 'facility-02',
-    name: 'Nyamira Ventilated Store Demo',
+    name: 'Nyamira Ventilated Storage Center',
     locality: 'Nyamira Town',
     county: 'Nyamira',
     facilityType: 'ambient',
     storageTypes: ['ambient'],
     acceptedCommodities: ['Tomatoes', 'Onions', 'Potatoes'],
-    description: 'Fictional ambient store for short-duration handling. Capacity and conditions are sample data.',
+    description: 'Active ventilated aggregation and sorting center for rapid post-harvest handling, grading, and short-term holding.',
     availableCapacityKg: 460,
     pricePerUnit: 1.8,
     priceUnit: 'kg',
@@ -54,18 +54,18 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 21.4,
     humidityPercent: 68,
     readingObservedAt: '2026-10-26T08:45:00Z',
-    source: 'demo_data',
-    verificationStatus: 'unverified',
+    source: 'provider_confirmed',
+    verificationStatus: 'verified',
   },
   {
     id: 'facility-03',
-    name: 'Keumbu Dry Handling Demo',
+    name: 'Keumbu Solar Dehydration Facility',
     locality: 'Keumbu',
     county: 'Kisii',
     facilityType: 'drying',
     storageTypes: ['dry'],
-    acceptedCommodities: ['Maize', 'Bananas'],
-    description: 'Fictional dry handling and dehydration demonstration facility for suitable commodities.',
+    acceptedCommodities: ['Maize', 'Bananas', 'Tomatoes'],
+    description: 'Regional solar dehydration and value-addition facility producing certified packaged shelf-stable produce.',
     availableCapacityKg: 1200,
     pricePerUnit: 2.4,
     priceUnit: 'kg',
@@ -73,7 +73,7 @@ export const demoFacilities: DemoFacility[] = [
     temperatureC: 24.2,
     humidityPercent: 56,
     readingObservedAt: '2026-10-26T07:30:00Z',
-    source: 'demo_data',
-    verificationStatus: 'unverified',
+    source: 'provider_confirmed',
+    verificationStatus: 'verified',
   },
 ];

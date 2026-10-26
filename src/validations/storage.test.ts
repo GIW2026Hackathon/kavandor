@@ -31,7 +31,7 @@ describe('transport request validation', () => {
     const result = transportRequestSchema.safeParse({
       harvestId: storageRequest.harvestId,
       pickupLocation: 'Nyakundi farm',
-      destinationLocation: 'Kisii Cold Store Demo',
+      destinationLocation: 'Kisii Central Cold Store Hub',
       requestedQuantity: 220,
       quantityUnit: 'kg',
       requestedPickupAt: '2026-10-27T07:00:00Z',
@@ -43,7 +43,7 @@ describe('transport request validation', () => {
     const result = transportRequestSchema.safeParse({
       harvestId: storageRequest.harvestId,
       pickupLocation: 'Nyakundi farm',
-      destinationLocation: 'Kisii Cold Store Demo',
+      destinationLocation: 'Kisii Central Cold Store Hub',
       requestedQuantity: 220,
       quantityUnit: 'kg',
       packageCount: 0,
