@@ -1,17 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { demoFacilities } from '@/demo/storage';
 
-export async function GET() {
-  return NextResponse.json({
-    facilities: [
-      {
-        id: 'facility-01',
-        name: 'Kisii Cold Store Demo',
-        type: 'cold_storage',
-        location: 'Kisii County',
-        capacityKg: 1200,
-        pricePerKg: 3.2,
-        source: 'demo_data',
-      },
-    ],
+export async function GET(request: NextRequest) {
+  const crop = request.nextUrl.searchParams.get('crop')?.toLowerCase();
+  const locality = request.nextUrl.searchParams.get('locality')?.toLowerCase();
+  const cooling = request.nextUrl.searchParams.get('cooling') === 'true';
+
+  const facilities = demoFacilities.filter((facility) => {
+    if (crop && !facility.acceptedCommodities.some((item) => item.toLowerCase().includes(crop))) return false;
+    if (locality && !facility.locality.toLowerCase().includes(locality)) return false;
+    if (cooling && !facility.storageTypes.includes('cold')) return false;
+    return true;
   });
+
+  return NextResponse.json({ facilities, source: 'demo_data' });
 }
