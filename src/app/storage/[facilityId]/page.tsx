@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Droplets, Gauge, Info, ShieldAlert, Thermometer } from 'lucide-react';
 import { AppShell, DemoNotice } from '@/components/layout/app-shell';
@@ -28,9 +29,10 @@ export default async function FacilityDetailPage({ params }: { params: Promise<{
             <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Demo facility · Unverified</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#17191D] sm:text-4xl">{facility.name}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[#74767B]">{facility.description}</p>
-            <div className="mt-6 flex min-h-64 items-end rounded-2xl border border-[#22252A] bg-gradient-to-br from-[#17191D] via-[#22252A] to-[#17191D] p-5 shadow-sm">
-              <span className="rounded-lg border border-white/10 bg-[#17191D]/90 px-3 py-2 text-xs font-mono font-semibold text-white/80 backdrop-blur">
-                Facility media placeholder · replace with authorised imagery
+            <div className="relative mt-6 min-h-64 overflow-hidden rounded-2xl border border-[#22252A] bg-[#22252A] shadow-sm">
+              <Image src={facility.imageUrl} alt={facility.imageAlt} fill priority sizes="(max-width: 1024px) 100vw, 780px" className="object-cover" />
+              <span className="absolute bottom-4 left-4 rounded-lg border border-white/15 bg-[#17191D]/85 px-3 py-2 text-xs font-mono font-semibold text-white/90 backdrop-blur">
+                Illustrative demo facility media
               </span>
             </div>
           </div>

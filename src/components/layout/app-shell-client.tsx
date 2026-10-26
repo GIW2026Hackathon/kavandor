@@ -9,15 +9,15 @@ import { KavandorLogo } from '@/components/ui/logo';
 
 const navigation = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/harvests', label: 'My harvests', icon: Sprout },
   { href: '/harvests/new', label: 'Register harvest', icon: Leaf },
-  { href: '/marketplace', label: 'Marketplace', icon: Store },
-  { href: '/offers', label: 'Offers & bookings', icon: Boxes },
+  { href: '/harvests', label: 'My harvests', icon: Sprout },
   { href: '/storage', label: 'Find storage', icon: Warehouse },
   { href: '/storage/requests', label: 'Storage requests', icon: PackageOpen },
   { href: '/storage/inventory', label: 'My stored produce', icon: Boxes },
-  { href: '/transport', label: 'Transport & collections', icon: Truck },
   { href: '/storage/alerts', label: 'Storage alerts', icon: BellRing },
+  { href: '/transport', label: 'Transport & collections', icon: Truck },
+  { href: '/marketplace', label: 'Marketplace', icon: Store },
+  { href: '/offers', label: 'Offers & bookings', icon: Boxes },
 ];
 
 export function AppShellClient({ children }: { children: React.ReactNode }) {
