@@ -2,20 +2,47 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Globe, LockKeyhole, Mail, Users } from 'lucide-react';
+import { ArrowRight, Globe, LockKeyhole, Mail, Store, Tractor, Truck, Users } from 'lucide-react';
 import { getAuthRedirectUrl, getSocialAuthProviders, isAuthReady } from '@/lib/auth';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
+
+type AccountRole = 'farmer' | 'facility_operator' | 'transport_provider';
+
+const accountRoles: Array<{ id: AccountRole; label: string; detail: string; icon: typeof Tractor }> = [
+  { id: 'farmer', label: 'Farmer', detail: 'Register harvests, choose storage and sell.', icon: Tractor },
+  { id: 'facility_operator', label: 'Storage facility', detail: 'Manage capacity, requests and conditions.', icon: Store },
+  { id: 'transport_provider', label: 'Transport provider', detail: 'Manage pickup quotes and deliveries.', icon: Truck },
+];
+
+const demoAccounts: Array<{ role: AccountRole; label: string; email: string; name: string }> = [
+  { role: 'farmer', label: 'Demo farmer', email: 'farmer@example.com', name: 'James Nyakundi' },
+  { role: 'facility_operator', label: 'Demo storage facility', email: 'operator@example.com', name: 'Kisii Cold Store' },
+  { role: 'transport_provider', label: 'Demo transport provider', email: 'provider@example.com', name: 'Songa Mobility' },
+];
+
+const roleDestination: Record<AccountRole, string> = {
+  farmer: '/dashboard',
+  facility_operator: '/partners',
+  transport_provider: '/transport',
+};
 
 export function AuthPanel() {
   const router = useRouter();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<AccountRole>('farmer');
   const [status, setStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const socialProviders = useMemo(() => getSocialAuthProviders(), []);
   const ready = isAuthReady();
+
+  function enterDemo(accountRole: AccountRole) {
+    setRole(accountRole);
+    setStatus('Opening demo workspace…');
+    router.push(roleDestination[accountRole]);
+  }
 
   async function handleEmailAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,7 +60,9 @@ export function AuthPanel() {
       const result = await action({
         email,
         password,
-        ...(mode === 'signup' ? { options: { emailRedirectTo: `${getAuthRedirectUrl()}/auth/callback` } } : {}),
+        ...(mode === 'signup'
+          ? { options: { emailRedirectTo: `${getAuthRedirectUrl()}/auth/callback`, data: { account_role: role } } }
+          : {}),
       });
 
       if (result.error) {
@@ -43,7 +72,8 @@ export function AuthPanel() {
 
       setStatus(mode === 'signin' ? 'Signed in successfully.' : 'Check your inbox to confirm your account.');
       if (mode === 'signin') {
-        router.push('/dashboard');
+        const metadataRole = result.data.user?.user_metadata?.account_role;
+        router.push(metadataRole === 'facility_operator' ? '/partners' : metadataRole === 'transport_provider' ? '/transport' : '/dashboard');
       }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to complete authentication.');
@@ -62,7 +92,7 @@ export function AuthPanel() {
     setIsSubmitting(true);
     setStatus('');
 
-    const redirectTo = `${getAuthRedirectUrl()}/auth/callback`;
+    const redirectTo = `${getAuthRedirectUrl()}/auth/callback?role=${role}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
@@ -91,8 +121,56 @@ export function AuthPanel() {
 
       {!ready && (
         <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          Add your Supabase project URL and anon key, then configure Google and Facebook providers in the Supabase dashboard.
+          Demo accounts are available below. Add Supabase credentials to enable live email and social authentication.
         </div>
+      )}
+
+      <section className="mb-6" aria-labelledby="demo-accounts-heading">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 id="demo-accounts-heading" className="text-sm font-bold text-[#004A25]">Demo accounts</h2>
+          <span className="rounded-full bg-[#F2C303]/25 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#004A25]">No password</span>
+        </div>
+        <div className="grid gap-2">
+          {demoAccounts.map((account) => (
+            <button
+              key={account.email}
+              type="button"
+              onClick={() => enterDemo(account.role)}
+              className="group flex items-center justify-between gap-4 rounded-xl border border-[#004A25]/10 bg-[#F8FBF9] px-4 py-3 text-left transition hover:border-[#76AC3C] hover:bg-white"
+            >
+              <span>
+                <span className="block text-sm font-bold text-[#004A25]">{account.label}</span>
+                <span className="mt-1 block text-xs text-[#3E594B]">{account.name} · {account.email}</span>
+              </span>
+              <ArrowRight size={17} className="shrink-0 text-[#76AC3C] transition group-hover:translate-x-1" />
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {ready && (
+        <fieldset className="mb-6">
+        <legend className="mb-3 text-sm font-bold text-[#004A25]">Choose your workspace</legend>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {accountRoles.map((option) => {
+            const Icon = option.icon;
+            const active = role === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setRole(option.id)}
+                className={`min-h-32 rounded-xl border p-3 text-left transition ${active ? 'border-[#004A25] bg-[#EAF6EE] shadow-sm' : 'border-[#004A25]/10 bg-white hover:border-[#004A25]/30'}`}
+              >
+                <Icon size={20} className={active ? 'text-[#76AC3C]' : 'text-[#3E594B]'} />
+                <span className="mt-3 block text-sm font-bold text-[#004A25]">{option.label}</span>
+                <span className="mt-1 block text-xs leading-5 text-[#3E594B]">{option.detail}</span>
+              </button>
+            );
+          })}
+        </div>
+        </fieldset>
       )}
 
       <div className="mb-6 grid gap-2 sm:grid-cols-2">
@@ -179,6 +257,10 @@ export function AuthPanel() {
           {isSubmitting ? 'Please wait...' : mode === 'signin' ? 'Sign in' : 'Create account'}
         </button>
       </form>
+
+      {!ready && (
+        <p className="mt-4 text-center text-xs text-[#3E594B]">Demo navigation bypasses live authentication and is intended for workspace previews.</p>
+      )}
 
       {status && (
         <p className="mt-4 rounded-xl border border-[#004A25]/10 bg-[#F8FBF9] px-3 py-2 text-sm text-[#004A25]">

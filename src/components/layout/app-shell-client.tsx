@@ -7,7 +7,9 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { KavandorLogo } from '@/components/ui/logo';
 
-const navigation = [
+export type WorkspaceRole = 'farmer' | 'facility_operator' | 'transport_provider';
+
+const farmerNavigation = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/harvests/new', label: 'Register harvest', icon: Leaf },
   { href: '/harvests', label: 'My harvests', icon: Sprout },
@@ -20,10 +22,35 @@ const navigation = [
   { href: '/offers', label: 'Offers & bookings', icon: Boxes },
 ];
 
-export function AppShellClient({ children }: { children: React.ReactNode }) {
+const roleNavigation: Record<WorkspaceRole, typeof farmerNavigation> = {
+  farmer: farmerNavigation,
+  facility_operator: [
+    { href: '/partners', label: 'Operations overview', icon: LayoutDashboard },
+    { href: '/storage/requests', label: 'Incoming requests', icon: PackageOpen },
+    { href: '/storage/inventory', label: 'Stored produce', icon: Boxes },
+    { href: '/storage/facility-01/conditions', label: 'Conditions', icon: BellRing },
+    { href: '/storage/alerts', label: 'Alerts', icon: BellRing },
+  ],
+  transport_provider: [
+    { href: '/transport', label: 'Transport overview', icon: LayoutDashboard },
+    { href: '/transport/requests/SONGA-DEMO-001', label: 'Active pickups', icon: Truck },
+    { href: '/storage/requests', label: 'Delivery handoffs', icon: PackageOpen },
+  ],
+};
+
+export function AppShellClient({ children, role = 'farmer' }: { children: React.ReactNode; role?: WorkspaceRole }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const isActive = (href: string) => href === '/harvests' ? pathname.startsWith('/harvests') && pathname !== '/harvests/new' : pathname === href;
+  const navigation = roleNavigation[role];
+  const profile = role === 'facility_operator'
+    ? { initials: 'CS', name: 'Kisii Cold Store', subtitle: 'Facility operator' }
+    : role === 'transport_provider'
+      ? { initials: 'SM', name: 'Songa Mobility', subtitle: 'Transport provider' }
+      : { initials: 'JN', name: 'James Nyakundi', subtitle: 'Farmer · Kisii' };
+  const quickNavigation = role === 'farmer'
+    ? [navigation[0], navigation[1], navigation[2], navigation[7], navigation[8]]
+    : navigation.slice(0, 5);
+  const isActive = (href: string) => href === '/harvests' ? pathname.startsWith('/harvests') && pathname !== '/harvests/new' : pathname === href || (role !== 'farmer' && href === '/partners' && pathname.startsWith('/partners'));
 
   return (
     <div className="min-h-screen bg-[#F6F3EC] text-[#212329] lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
@@ -37,7 +64,7 @@ export function AppShellClient({ children }: { children: React.ReactNode }) {
               <X size={20} />
             </button>
           </div>
-          <nav className="mt-8 space-y-1" aria-label="Farmer navigation">
+          <nav className="mt-8 space-y-1" aria-label={`${role === 'farmer' ? 'Farmer' : role === 'facility_operator' ? 'Facility operator' : 'Transport provider'} navigation`}>
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -62,11 +89,11 @@ export function AppShellClient({ children }: { children: React.ReactNode }) {
           <div className="mt-auto border-t border-white/10 pt-4">
             <div className="flex items-center gap-3 rounded-lg bg-[#22252A] p-2.5">
               <span className="grid size-9 place-items-center rounded-full bg-white/10 text-sm font-bold text-white">
-                JN
+                {profile.initials}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">James Nyakundi</p>
-                <p className="text-xs text-neutral-400">Farmer · Kisii</p>
+                <p className="truncate text-sm font-semibold text-white">{profile.name}</p>
+                <p className="text-xs text-neutral-400">{profile.subtitle}</p>
               </div>
             </div>
           </div>
@@ -97,7 +124,7 @@ export function AppShellClient({ children }: { children: React.ReactNode }) {
         <main>{children}</main>
       </div>
       <nav className="fixed inset-x-0 bottom-0 z-30 grid h-16 grid-cols-5 border-t border-[#E2DED6] bg-white px-1 lg:hidden" aria-label="Quick navigation">
-        {[navigation[0], navigation[1], navigation[2], navigation[5], navigation[8]].map((item) => {
+        {quickNavigation.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (

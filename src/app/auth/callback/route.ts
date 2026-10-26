@@ -6,7 +6,9 @@ import { env, hasSupabaseConfig } from '@/lib/env';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const requestedRole = searchParams.get('role');
+  const fallbackForRole = requestedRole === 'facility_operator' ? '/partners' : requestedRole === 'transport_provider' ? '/transport' : '/dashboard';
+  const next = searchParams.get('next') ?? fallbackForRole;
 
   if (!hasSupabaseConfig || !env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.redirect(`${origin}/auth/signin?error=${encodeURIComponent('Supabase is not configured for authentication.')}`);
@@ -35,5 +37,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/auth/signin?error=${encodeURIComponent(error.message)}`);
   }
 
-  return NextResponse.redirect(new URL(next, origin));
+  const { data: auth } = await supabase.auth.getUser();
+  const accountRole = auth.user?.user_metadata?.account_role;
+  const roleDestination = accountRole === 'facility_operator' ? '/partners' : accountRole === 'transport_provider' ? '/transport' : '/dashboard';
+
+  return NextResponse.redirect(new URL(searchParams.has('next') ? next : roleDestination, origin));
 }
