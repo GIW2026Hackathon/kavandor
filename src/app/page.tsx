@@ -4,9 +4,7 @@ import { ArrowRight, CheckCircle2, Leaf, MoveRight, Sparkles, TrendingUp } from 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#F6F3EC] text-[#212329]">
-      {/* Full Bleed Hero Section — Zero heavy overlays, raw video prominence */}
       <section className="relative flex min-h-[92vh] w-full flex-col justify-between overflow-hidden bg-black text-white lg:min-h-screen">
-        {/* Background Video (Fully Visible, No Scrims) */}
         <video
           autoPlay
           loop
@@ -18,7 +16,6 @@ export default function HomePage() {
           <source src="/hero-video.mp4" type="video/mp4" />
         </video>
 
-        {/* Minimal Transparent Navigation Header */}
         <header className="relative z-30 w-full border-b border-white/15 bg-black/20 backdrop-blur-xs">
           <div className="mx-auto flex h-18 max-w-7xl items-center px-4 sm:px-6">
             <Link href="/" className="flex items-center gap-2.5" aria-label="KAVANDOR home">
@@ -35,7 +32,7 @@ export default function HomePage() {
               <a href="#audience" className="drop-shadow transition hover:text-[#FF5A1F]">For buyers</a>
             </nav>
             <Link
-              href="/dashboard"
+              href="/auth/signin"
               className="ml-6 rounded-xl border border-white/30 bg-black/25 px-4 py-2 text-sm font-bold text-white shadow-md backdrop-blur-md transition hover:bg-black/45"
             >
               Sign in
@@ -49,7 +46,6 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* Hero Content Grid */}
         <div className="relative z-20 mx-auto my-auto grid max-w-7xl w-full gap-12 px-4 py-12 sm:px-6 md:py-16 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/35 px-4 py-1.5 text-xs font-mono font-bold tracking-wider text-white backdrop-blur-md shadow-lg">
@@ -89,7 +85,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Floating Glassmorphic Demo Card */}
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
             <div className="relative overflow-hidden rounded-3xl border border-white/25 bg-black/35 p-6 sm:p-7 text-white shadow-2xl backdrop-blur-xl">
               <div className="relative flex items-center justify-between">
@@ -138,7 +133,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How it works section */}
       <section id="how" className="border-b border-[#E2DED6] bg-white py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -163,7 +157,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Built around the handoff */}
       <section id="audience" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>
@@ -190,7 +183,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-[#E2DED6] bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-xs text-[#74767B] sm:px-6 sm:flex-row sm:items-center sm:justify-between">
           <p>KAVANDOR · Intelligent Harvest & Supply Network · Kisii & Nyamira</p>
