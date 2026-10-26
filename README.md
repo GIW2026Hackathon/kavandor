@@ -30,7 +30,12 @@ npm run lint
 npm run typecheck
 npm run test
 npm run e2e
+npm run ci
 ```
+
+## GitHub and CI
+
+A GitHub Actions workflow is included for linting, type checking, unit tests, and build validation. Open pull requests against `main`, and keep shared contracts aligned before merging feature branches.
 
 ## Environment variables
 
