@@ -198,7 +198,7 @@ function createInitialState(): BackendState {
     harvestDate: now,
     location: 'Kisii County',
     handlingNotes: 'Verified harvest batch for agricultural planning.',
-    photoUrl: '/storage/cold-store.jpg',
+    photoUrl: '/value-addition/cold-storage.jpg',
     status: 'assessed',
     createdAt: now,
     updatedAt: now,

@@ -196,7 +196,7 @@ export class PreservationDecisionService {
         unknowns: ['Turnaround time: ~24 hours from intake'],
         feasible: cropLower.includes('tomato'),
         actionLabel: 'Request Processing Booking',
-        actionHref: `/storage?type=processing&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
+        actionHref: `/value-addition?type=processing&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
       },
       {
         type: 'storage',
@@ -218,7 +218,7 @@ export class PreservationDecisionService {
         unknowns: ['Price appreciation depends on supply fluctuations in Kisii Town'],
         feasible: qty <= 1000,
         actionLabel: 'Find & Reserve Cold Storage',
-        actionHref: `/storage?type=cold&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
+        actionHref: `/value-addition?type=cold&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
       },
       {
         type: 'drying',
@@ -238,7 +238,7 @@ export class PreservationDecisionService {
         unknowns: ['Solar drying turnaround: 36-48 hours depending on weather'],
         feasible: ['banana', 'tomato', 'mango', 'maize', 'grain', 'onion'].some((c) => cropLower.includes(c)),
         actionLabel: 'Explore Solar Drying Hub',
-        actionHref: `/storage?type=drying&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
+        actionHref: `/value-addition?type=drying&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
       },
     ];
 

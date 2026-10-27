@@ -190,7 +190,7 @@ export default async function ComparePage({ params }: { params: Promise<{ id: st
 
                 <div className="mt-5 pt-2">
                   <Link
-                    href={option.actionHref || `/storage?harvestId=${harvest.id}`}
+                    href={option.actionHref || `/value-addition?harvestId=${harvest.id}`}
                     className={`flex h-10 items-center justify-between rounded-xl px-4 text-xs font-bold transition active:scale-98 ${
                       isTop
                         ? 'bg-[#FF5A1F] hover:bg-[#E44E18] text-white shadow-xs'

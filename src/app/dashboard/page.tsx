@@ -124,9 +124,9 @@ export default async function DashboardPage() {
               icon: TrendingUp,
             },
             {
-              label: 'Verified cold hubs',
-              value: '3',
-              detail: 'Kisii & Nyamira Network',
+              label: 'Value-addition network',
+              value: '9',
+              detail: 'Vetted processors & cold hubs',
               icon: ClipboardCheck,
             },
           ].map((metric) => (
@@ -229,8 +229,8 @@ export default async function DashboardPage() {
                     href: readyForDecision ? `/harvests/${readyForDecision.id}` : '/harvests/new',
                   },
                   {
-                    label: 'Explore certified cold hubs',
-                    href: readyForDecision ? `/storage?harvestId=${readyForDecision.id}&crop=${readyForDecision.crop}&quantity=${readyForDecision.quantity}` : '/storage',
+                    label: 'Discover processors, storage & aggregators',
+                    href: readyForDecision ? `/value-addition?harvestId=${readyForDecision.id}&crop=${encodeURIComponent(readyForDecision.crop)}&quantity=${readyForDecision.quantity}` : '/value-addition',
                   },
                   {
                     label: 'Check buyer purchase offers',

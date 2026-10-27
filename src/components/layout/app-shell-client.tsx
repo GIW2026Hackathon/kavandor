@@ -23,6 +23,7 @@ import {
   User,
   Warehouse,
   BellRing,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -76,7 +77,7 @@ const roleMeta: Record<WorkspaceRole, RoleProfile> = {
 const farmerNavigation = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/harvests', label: 'My harvests', icon: Sprout },
-  { href: '/storage', label: 'Storage & preservation', icon: Warehouse },
+  { href: '/value-addition', label: 'Value addition', icon: Sparkles },
   { href: '/marketplace', label: 'Marketplace', icon: Store },
   { href: '/storage/alerts', label: 'Activity', icon: BellRing },
 ];
@@ -168,8 +169,16 @@ export function AppShellClient({
     if (cleanHref === '/partners') {
       return pathname.startsWith('/partners');
     }
-    if (cleanHref === '/storage') {
-      return pathname === '/storage' || (pathname.startsWith('/storage/') && !pathname.startsWith('/storage/requests') && !pathname.startsWith('/storage/inventory') && !pathname.startsWith('/storage/alerts'));
+    if (cleanHref === '/storage' || cleanHref === '/value-addition') {
+      return (
+        pathname === '/value-addition' ||
+        pathname.startsWith('/value-addition/') ||
+        pathname === '/storage' ||
+        (pathname.startsWith('/storage/') &&
+          !pathname.startsWith('/storage/requests') &&
+          !pathname.startsWith('/storage/inventory') &&
+          !pathname.startsWith('/storage/alerts'))
+      );
     }
     return pathname === cleanHref;
   };

@@ -383,10 +383,10 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
           <Link
-            href={`/storage?harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${harvest.quantity}`}
+            href={`/value-addition?harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${harvest.quantity}`}
             className="shrink-0 inline-flex h-10 items-center gap-2 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] px-4 text-xs font-bold text-[#17191D] hover:bg-white transition"
           >
-            Browse All Regional Providers <ArrowRight size={14} />
+            Browse All Value-Addition Facilities <ArrowRight size={14} />
           </Link>
         </div>
       </div>

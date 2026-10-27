@@ -625,7 +625,7 @@ export class SupabaseDatabaseAdapter implements IDatabaseAdapter {
       temperatureC: f.type === 'cold_storage' ? 11.8 : f.type === 'drying' ? 24.2 : 21.4,
       humidityPercent: f.type === 'cold_storage' ? 82 : f.type === 'drying' ? 56 : 68,
       readingObservedAt: f.created_at,
-      imageUrl: f.type === 'cold_storage' ? '/storage/cold-store.jpg' : f.type === 'drying' ? '/storage/dry-handling.jpg' : '/storage/ambient-store.jpg',
+      imageUrl: f.type === 'cold_storage' ? '/value-addition/cold-storage.jpg' : f.type === 'drying' ? '/value-addition/solar-drying.jpg' : '/value-addition/coop-aggregation.jpg',
       imageAlt: `${f.name} facility`,
       source: f.is_demo ? 'demo_data' : 'provider_confirmed',
       verificationStatus: (f.verification_status as 'verified' | 'unverified') || 'verified',

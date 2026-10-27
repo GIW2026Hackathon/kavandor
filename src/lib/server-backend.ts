@@ -515,7 +515,7 @@ export async function createAssessment(
       p_limitations: result.limitations,
       p_provider: result.provider,
       p_mode: 'provider',
-      p_model: result.provider.startsWith('gemini') ? 'gemini-2.5-flash' : null,
+      p_model: result.provider.startsWith('gemini') ? result.provider : null,
     }).single();
     if (!error && data) {
       savedRecord = data as Record<string, unknown>;

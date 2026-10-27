@@ -137,7 +137,7 @@ export function PathwayCard({ pathway, harvestId, isTopRecommendation }: Pathway
       {/* Action Button */}
       <div className="mt-5 pt-3 border-t border-[#E2DED6]">
         <Link
-          href={pathway.actionHref || `/storage?harvestId=${harvestId}`}
+          href={pathway.actionHref || `/value-addition?harvestId=${harvestId}`}
           className={`flex h-11 items-center justify-between rounded-xl px-5 text-xs font-bold transition active:scale-98 ${
             isTopRecommendation
               ? 'bg-[#FF5A1F] hover:bg-[#E44E18] text-white shadow-sm'

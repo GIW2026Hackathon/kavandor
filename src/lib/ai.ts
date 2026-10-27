@@ -99,10 +99,14 @@ export async function assessHarvest(input?: HarvestAssessmentInput): Promise<AIA
   const notes = input?.handlingNotes?.trim() || 'Standard harvest inspection.';
   const now = new Date().toISOString();
 
-  const apiKey = env.AI_PROVIDER_API_KEY || env.GEMINI_API_KEY;
+  const apiKey =
+    env.AI_PROVIDER_API_KEY ||
+    env.GEMINI_API_KEY ||
+    process.env.AI_PROVIDER_API_KEY ||
+    process.env.GEMINI_API_KEY;
 
   // If no AI key is configured, return calibrated deterministic agronomic assessment
-  if (!hasAiConfig || !apiKey) {
+  if (!apiKey) {
     return createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'kavandor-agronomic-engine', input?.clarificationAnswers);
   }
 
@@ -214,39 +218,61 @@ Return ONLY a valid JSON object matching this schema:
 
     parts.push({ text: promptText.trim() });
 
-    const modelName = 'gemini-2.5-flash';
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts }],
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: 'application/json',
-          },
-        }),
-      },
-    );
+    const CANDIDATE_MODELS = [
+      'gemini-3-flash-preview',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-flash-latest',
+    ];
 
-    if (!response.ok) {
-      console.warn(`[KAVANDOR AI] Gemini API call returned ${response.status}: ${response.statusText}. Falling back to domain rules.`);
-      return createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'gemini-fallback-http-error', input?.clarificationAnswers);
+    let rawContent: string | null = null;
+    let selectedModel = '';
+
+    for (const model of CANDIDATE_MODELS) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            signal: AbortSignal.timeout(8000),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts }],
+              generationConfig: {
+                temperature: 0.2,
+                responseMimeType: 'application/json',
+              },
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          console.warn(`[KAVANDOR AI] Model ${model} returned HTTP ${response.status}: ${response.statusText}. Trying next candidate.`);
+          continue;
+        }
+
+        const data = await response.json();
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (content) {
+          rawContent = content;
+          selectedModel = model;
+          console.info(`[KAVANDOR AI] Successfully generated assessment with model: ${model}`);
+          break;
+        }
+      } catch (callErr) {
+        console.warn(`[KAVANDOR AI] Error attempting model ${model}:`, callErr);
+      }
     }
 
-    const data = await response.json();
-    const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
     if (!rawContent) {
-      console.warn('[KAVANDOR AI] Gemini API returned empty content. Falling back to domain rules.');
-      return createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'gemini-fallback-empty-response', input?.clarificationAnswers);
+      console.warn('[KAVANDOR AI] All Gemini candidate models failed or returned empty content. Falling back to calibrated domain rules.');
+      return createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'gemini-fallback-all-models-failed', input?.clarificationAnswers);
     }
 
     const parsedJson = JSON.parse(rawContent);
-    parsedJson.provider = modelName;
+    parsedJson.provider = selectedModel;
     parsedJson.createdAt = now;
 
     // Enrich with deterministic evidence and engine fallbacks if missing
