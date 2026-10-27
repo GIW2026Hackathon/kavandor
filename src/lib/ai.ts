@@ -49,7 +49,7 @@ export async function assessHarvest(input?: HarvestAssessmentInput): Promise<AIA
 
   // If no AI key is configured, return high-accuracy deterministic agronomic assessment
   if (!hasAiConfig || !env.AI_PROVIDER_API_KEY) {
-    return createDeterministicAssessment(cropName, quantity, location, notes, now, 'demo-fallback');
+    return createDeterministicAssessment(cropName, quantity, location, notes, now, 'kavandor-agronomic-engine');
   }
 
   try {

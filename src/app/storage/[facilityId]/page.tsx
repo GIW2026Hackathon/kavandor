@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Droplets, Gauge, Info, ShieldAlert, Thermometer } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
-import { findFacility } from '@/demo/storage';
+import { findFacility } from '@/data/facilities';
 
 export const instant = false;
 

@@ -1,5 +1,5 @@
 import { AppShell } from '@/components/layout/app-shell';
-import { findFacility } from '@/demo/storage';
+import { findFacility } from '@/data/facilities';
 import { notFound } from 'next/navigation';
 
 export const instant = false;

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { StorageRequestWizard } from '@/components/storage/storage-request-wizard';
-import { findFacility } from '@/demo/storage';
+import { findFacility } from '@/data/facilities';
 
 export const instant = false;
 

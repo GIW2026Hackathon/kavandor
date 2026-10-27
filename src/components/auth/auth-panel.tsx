@@ -14,18 +14,6 @@ const accountRoles: Array<{ id: AccountRole; label: string; detail: string; icon
   { id: 'transport_provider', label: 'Transport provider', detail: 'Manage pickup quotes and deliveries.', icon: Truck },
 ];
 
-const demoAccounts: Array<{ role: AccountRole; label: string; email: string; name: string }> = [
-  { role: 'farmer', label: 'Demo farmer', email: 'farmer@example.com', name: 'James Nyakundi' },
-  { role: 'facility_operator', label: 'Demo storage facility', email: 'operator@example.com', name: 'Kisii Cold Store' },
-  { role: 'transport_provider', label: 'Demo transport provider', email: 'provider@example.com', name: 'Songa Mobility' },
-];
-
-const roleDestination: Record<AccountRole, string> = {
-  farmer: '/dashboard',
-  facility_operator: '/partners',
-  transport_provider: '/transport',
-};
-
 export function AuthPanel() {
   const router = useRouter();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -37,12 +25,6 @@ export function AuthPanel() {
 
   const socialProviders = useMemo(() => getSocialAuthProviders(), []);
   const ready = isAuthReady();
-
-  function enterDemo(accountRole: AccountRole) {
-    setRole(accountRole);
-    setStatus('Opening demo workspace…');
-    router.push(roleDestination[accountRole]);
-  }
 
   async function handleEmailAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -119,37 +101,7 @@ export function AuthPanel() {
         </div>
       </div>
 
-      {!ready && (
-        <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          Demo accounts are available below. Add Supabase credentials to enable live email and social authentication.
-        </div>
-      )}
-
-      <section className="mb-6" aria-labelledby="demo-accounts-heading">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 id="demo-accounts-heading" className="text-sm font-bold text-[#004A25]">Demo accounts</h2>
-          <span className="rounded-full bg-[#F2C303]/25 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#004A25]">No password</span>
-        </div>
-        <div className="grid gap-2">
-          {demoAccounts.map((account) => (
-            <button
-              key={account.email}
-              type="button"
-              onClick={() => enterDemo(account.role)}
-              className="group flex items-center justify-between gap-4 rounded-xl border border-[#004A25]/10 bg-[#F8FBF9] px-4 py-3 text-left transition hover:border-[#76AC3C] hover:bg-white"
-            >
-              <span>
-                <span className="block text-sm font-bold text-[#004A25]">{account.label}</span>
-                <span className="mt-1 block text-xs text-[#3E594B]">{account.name} · {account.email}</span>
-              </span>
-              <ArrowRight size={17} className="shrink-0 text-[#76AC3C] transition group-hover:translate-x-1" />
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {ready && (
-        <fieldset className="mb-6">
+      <fieldset className="mb-6">
         <legend className="mb-3 text-sm font-bold text-[#004A25]">Choose your workspace</legend>
         <div className="grid gap-2 sm:grid-cols-3">
           {accountRoles.map((option) => {
@@ -170,8 +122,7 @@ export function AuthPanel() {
             );
           })}
         </div>
-        </fieldset>
-      )}
+      </fieldset>
 
       <div className="mb-6 grid gap-2 sm:grid-cols-2">
         <button
@@ -257,10 +208,6 @@ export function AuthPanel() {
           {isSubmitting ? 'Please wait...' : mode === 'signin' ? 'Sign in' : 'Create account'}
         </button>
       </form>
-
-      {!ready && (
-        <p className="mt-4 text-center text-xs text-[#3E594B]">Demo navigation bypasses live authentication and is intended for workspace previews.</p>
-      )}
 
       {status && (
         <p className="mt-4 rounded-xl border border-[#004A25]/10 bg-[#F8FBF9] px-3 py-2 text-sm text-[#004A25]">

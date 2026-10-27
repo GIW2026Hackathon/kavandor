@@ -54,7 +54,7 @@ export default function DashboardPage() {
               </div>
               <Link href="/harvests" className="text-sm font-bold text-[#FF5A1F] hover:underline">View all</Link>
             </div>
-            <HarvestCard crop="Tomatoes" quantity={220} unit="kg" harvestDate="26 Oct 2026" location="Nyakundi farm · Kisii" status="assessed" action="Review harvest" href="/harvests/harvest-demo-001" />
+            <HarvestCard crop="Tomatoes" quantity={220} unit="kg" harvestDate="26 Oct 2026" location="Nyakundi farm · Kisii" status="assessed" action="Review harvest" href="/harvests/KV-2026-001" />
             <HarvestCard crop="Bananas" quantity={8} unit="crate" harvestDate="24 Oct 2026" location="Nyakundi farm · Kisii" status="offer_pending" action="Review offer" href="/offers" />
           </section>
 
@@ -66,7 +66,7 @@ export default function DashboardPage() {
               </div>
               <h2 className="mt-3 text-xl font-bold text-white">Review two next moves</h2>
               <p className="mt-2 text-sm leading-6 text-neutral-300">Compare what your tomato harvest could earn before accepting a buyer offer.</p>
-              <Link href="/harvests/harvest-demo-001/compare" className="mt-5 flex h-11 items-center justify-between rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-4 text-sm font-bold text-white transition shadow-sm">
+              <Link href="/harvests/KV-2026-001/compare" className="mt-5 flex h-11 items-center justify-between rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-4 text-sm font-bold text-white transition shadow-sm">
                 <span>Compare options</span> <ChevronRight size={18} />
               </Link>
             </section>
@@ -75,7 +75,7 @@ export default function DashboardPage() {
               <h2 className="text-lg font-bold text-[#17191D]">Your next moves</h2>
               <div className="mt-4 divide-y divide-[#E2DED6]">
                 {[
-                  ['Check tomato assessment', '/harvests/harvest-demo-001'],
+                  ['Check tomato assessment', '/harvests/KV-2026-001'],
                   ['Review offer from FreshLink', '/offers'],
                   ['Plan collection', '/offers'],
                 ].map(([label, href]) => (

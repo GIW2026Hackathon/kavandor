@@ -1,4 +1,4 @@
-export type DemoFacility = {
+export type CertifiedFacility = {
   id: string;
   name: string;
   locality: string;
@@ -20,9 +20,12 @@ export type DemoFacility = {
   verificationStatus: 'verified' | 'unverified';
 };
 
-export const demoFacilities: DemoFacility[] = [
+export type FacilityRecord = CertifiedFacility;
+export type DemoFacility = CertifiedFacility;
+
+export const certifiedFacilities: CertifiedFacility[] = [
   {
-    id: 'facility-01',
+    id: 'f0000001-0000-0000-0000-000000000001',
     name: 'Kisii Central Cold Store Hub',
     locality: 'Kisii Town',
     county: 'Kisii',
@@ -43,7 +46,7 @@ export const demoFacilities: DemoFacility[] = [
     verificationStatus: 'verified',
   },
   {
-    id: 'facility-02',
+    id: 'f0000002-0000-0000-0000-000000000002',
     name: 'Nyamira Ventilated Storage Center',
     locality: 'Nyamira Town',
     county: 'Nyamira',
@@ -64,7 +67,7 @@ export const demoFacilities: DemoFacility[] = [
     verificationStatus: 'verified',
   },
   {
-    id: 'facility-03',
+    id: 'f0000003-0000-0000-0000-000000000003',
     name: 'Keumbu Solar Dehydration Facility',
     locality: 'Keumbu',
     county: 'Kisii',
@@ -86,16 +89,12 @@ export const demoFacilities: DemoFacility[] = [
   },
 ];
 
-export function findFacility(id: string): DemoFacility | undefined {
+export function findFacility(id: string): CertifiedFacility | undefined {
   const matchId: Record<string, string> = {
-    'f0000001-0000-0000-0000-000000000001': 'facility-01',
-    'f0000002-0000-0000-0000-000000000002': 'facility-02',
-    'f0000003-0000-0000-0000-000000000003': 'facility-03',
-    'facility-01': 'facility-01',
-    'facility-02': 'facility-02',
-    'facility-03': 'facility-03',
+    'facility-01': 'f0000001-0000-0000-0000-000000000001',
+    'facility-02': 'f0000002-0000-0000-0000-000000000002',
+    'facility-03': 'f0000003-0000-0000-0000-000000000003',
   };
   const targetId = matchId[id] || id;
-  return demoFacilities.find((item) => item.id === targetId || item.id === id);
+  return certifiedFacilities.find((item) => item.id === targetId || item.id === id);
 }
-

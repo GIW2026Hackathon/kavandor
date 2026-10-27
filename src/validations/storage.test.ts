@@ -9,7 +9,7 @@ const storageRequest = {
   requestedStartAt: '2026-10-27T08:00:00Z',
   expectedEndAt: '2026-11-03T08:00:00Z',
   storageRequirements: 'Keep tomatoes ventilated.',
-  transportPreference: 'songa_demo',
+  transportPreference: 'songa_provider',
 };
 
 describe('storage request validation', () => {

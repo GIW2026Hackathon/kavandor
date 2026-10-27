@@ -254,9 +254,9 @@ describe('Agentic AI & Backend Suite', () => {
       expect(auth.role).toBe('buyer');
     });
 
-    it('defaults gracefully to demo farmer context when unauthenticated', async () => {
+    it('defaults gracefully to primary farmer context when unauthenticated', async () => {
       const auth = await resolveAuthContext();
-      expect(auth.userId).toBe('user-farmer-demo');
+      expect(auth.userId).toBe('usr-farmer-001');
       expect(auth.role).toBe('farmer');
     });
   });

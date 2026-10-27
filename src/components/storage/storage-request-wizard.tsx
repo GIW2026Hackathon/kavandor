@@ -4,14 +4,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import type { DemoFacility } from '@/demo/storage';
+import type { CertifiedFacility } from '@/data/facilities';
 
-export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
+export function StorageRequestWizard({ facility }: { facility: CertifiedFacility }) {
   const [step, setStep] = useState(0);
   const [quantity, setQuantity] = useState('220');
   const [start, setStart] = useState('2026-10-27T08:00');
   const [end, setEnd] = useState('2026-11-03T08:00');
-  const [transport, setTransport] = useState<'songa_demo' | 'self_arranged'>('songa_demo');
+  const [transport, setTransport] = useState<'songa_provider' | 'self_arranged'>('songa_provider');
   const [requirements, setRequirements] = useState('Keep ventilated and separated from damaged produce.');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -42,7 +42,7 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          harvestId: 'harvest-demo-001',
+          harvestId: 'KV-2026-001',
           facilityId: facility.id,
           requestedQuantity: Number(quantity),
           quantityUnit: 'kg',
@@ -55,12 +55,12 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
       if (!storageResponse.ok) throw new Error('The storage request could not be submitted.');
       const storage = await storageResponse.json();
       let transportReferenceValue = '';
-      if (transport === 'songa_demo') {
+      if (transport === 'songa_provider') {
         const transportResponse = await fetch('/api/transport-jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            harvestId: 'harvest-demo-001',
+            harvestId: 'KV-2026-001',
             storageRequestId: storage.reservation.id,
             pickupLocation: 'Nyakundi farm, Kisii',
             destinationLocation: `${facility.name}, ${facility.locality}`,
@@ -170,7 +170,7 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
         {step === 3 && (
           <WizardPanel title="Choose transportation" copy="Select verified agricultural transit provider or arrange self-delivery.">
             <div className="grid gap-3">
-              <Choice active={transport === 'songa_demo'} onClick={() => setTransport('songa_demo')} title="KAVANDOR Express Dispatch" detail="Dispatch verified regional transporter for scheduled farmgate collection." icon="SONGA" />
+              <Choice active={transport === 'songa_provider'} onClick={() => setTransport('songa_provider')} title="KAVANDOR Express Dispatch" detail="Dispatch verified regional transporter for scheduled farmgate collection." icon="SONGA" />
               <Choice active={transport === 'self_arranged'} onClick={() => setTransport('self_arranged')} title="Direct Self-Delivery" detail="Deliver directly to the cold facility intake gate using own vehicle." icon="SELF" />
             </div>
           </WizardPanel>
@@ -183,8 +183,8 @@ export function StorageRequestWizard({ facility }: { facility: DemoFacility }) {
               <Summary label="Duration" value={`${durationDays} day${durationDays === 1 ? '' : 's'}`} />
               <Summary label="Facility" value={facility.name} />
               <Summary label="Storage estimate" value={`KSh ${storageCost.toLocaleString()}`} />
-              <Summary label="Transport" value={transport === 'songa_demo' ? `KSh ${estimatedTransport.toLocaleString()} · scheduled dispatch` : 'Direct Delivery · self-arranged'} />
-              <Summary label="Estimated total" value={`KSh ${(storageCost + (transport === 'songa_demo' ? estimatedTransport : 0)).toLocaleString()}`} />
+              <Summary label="Transport" value={transport === 'songa_provider' ? `KSh ${estimatedTransport.toLocaleString()} · scheduled dispatch` : 'Direct Delivery · self-arranged'} />
+              <Summary label="Estimated total" value={`KSh ${(storageCost + (transport === 'songa_provider' ? estimatedTransport : 0)).toLocaleString()}`} />
             </dl>
           </WizardPanel>
         )}

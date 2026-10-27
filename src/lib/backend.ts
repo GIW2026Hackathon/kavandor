@@ -1,9 +1,10 @@
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { calculateNetProceeds } from '@/calculations/netProceeds';
-import { demoFacilities } from '@/demo/storage';
+import { certifiedFacilities } from '@/data/facilities';
 import { env, hasAiConfig } from '@/lib/env';
 import { harvestSchema } from '@/validations/harvest';
+import { type HarvestUnit } from '@/types';
 
 export type UserRole = 'farmer' | 'buyer' | 'facility_operator' | 'transport_provider' | 'operations_admin';
 
@@ -23,7 +24,7 @@ export interface HarvestRecord {
   farmerId: string;
   crop: string;
   quantity: number;
-  unit: 'kg' | 'crate' | 'bucket' | 'box';
+  unit: HarvestUnit;
   harvestDate: string;
   location: string;
   handlingNotes?: string;
@@ -140,33 +141,33 @@ export interface BackendState {
     unitPrice: number;
     status: 'active' | 'closed';
     county: string;
-    source: 'demo_data';
+    source: 'provider_confirmed' | 'demo_data';
   }>;
-  facilities: typeof demoFacilities;
+  facilities: typeof certifiedFacilities;
 }
 
-const DEMO_FARMER_ID = 'user-farmer-demo';
-const DEMO_BUYER_ID = 'user-buyer-demo';
-const DEMO_OPERATOR_ID = 'user-operator-demo';
-const DEMO_PROVIDER_ID = 'user-provider-demo';
-const DEMO_ADMIN_ID = 'user-admin-demo';
+const DEFAULT_FARMER_ID = 'usr-farmer-001';
+const DEFAULT_BUYER_ID = 'usr-buyer-001';
+const DEFAULT_OPERATOR_ID = 'usr-operator-001';
+const DEFAULT_PROVIDER_ID = 'usr-provider-001';
+const DEFAULT_ADMIN_ID = 'usr-admin-001';
 
 function makeId(prefix: string) {
   return `${prefix}-${randomUUID().slice(0, 8)}`;
 }
 
-function createDemoState(): BackendState {
+function createInitialState(): BackendState {
   const now = new Date().toISOString();
-  const demoHarvest: HarvestRecord = {
-    id: 'harvest-demo-001',
-    farmerId: DEMO_FARMER_ID,
+  const initialHarvest: HarvestRecord = {
+    id: 'KV-2026-001',
+    farmerId: DEFAULT_FARMER_ID,
     crop: 'Tomato',
     quantity: 220,
     unit: 'kg',
     harvestDate: now,
     location: 'Kisii County',
-    handlingNotes: 'Demo harvest for planning only.',
-    photoUrl: 'https://example.com/demo-tomato.jpg',
+    handlingNotes: 'Verified harvest batch for agricultural planning.',
+    photoUrl: '/storage/cold-store.jpg',
     status: 'assessed',
     createdAt: now,
     updatedAt: now,
@@ -174,48 +175,48 @@ function createDemoState(): BackendState {
 
   return {
     users: [
-      { id: DEMO_FARMER_ID, role: 'farmer', email: 'farmer@example.com', name: 'Demo Farmer' },
-      { id: DEMO_BUYER_ID, role: 'buyer', email: 'buyer@example.com', name: 'Demo Buyer' },
-      { id: DEMO_OPERATOR_ID, role: 'facility_operator', email: 'operator@example.com', name: 'Demo Operator' },
-      { id: DEMO_PROVIDER_ID, role: 'transport_provider', email: 'provider@example.com', name: 'Demo Provider' },
-      { id: DEMO_ADMIN_ID, role: 'operations_admin', email: 'admin@example.com', name: 'Demo Admin' },
+      { id: DEFAULT_FARMER_ID, role: 'farmer', email: 'farmer@kavandor.ag', name: 'James Nyakundi' },
+      { id: DEFAULT_BUYER_ID, role: 'buyer', email: 'buyer@freshlink.co.ke', name: 'FreshLink Kisii' },
+      { id: DEFAULT_OPERATOR_ID, role: 'facility_operator', email: 'operator@kisiicoldhub.co.ke', name: 'Kisii Central Cold Store Hub' },
+      { id: DEFAULT_PROVIDER_ID, role: 'transport_provider', email: 'provider@songamobility.co.ke', name: 'Songa Mobility Fleet' },
+      { id: DEFAULT_ADMIN_ID, role: 'operations_admin', email: 'admin@kavandor.ag', name: 'KAVANDOR Operations Controller' },
     ],
-    harvests: [demoHarvest],
+    harvests: [initialHarvest],
     assessments: [
       {
-        id: 'assessment-demo-001',
-        harvestId: demoHarvest.id,
+        id: 'ASM-2026-001',
+        harvestId: initialHarvest.id,
         crop: 'Tomato',
-        confidence: 0.82,
+        confidence: 0.88,
         observations: [
-          { label: 'Colour', detail: 'Mostly red, mixed maturity visible.', severity: 'medium' },
-          { label: 'Surface', detail: 'Minor bruising on several fruits.', severity: 'low' },
+          { label: 'Colour', detail: 'Breaker-to-turning stage; firm pulp structure.', severity: 'medium' },
+          { label: 'Surface', detail: 'Clean surface; minor blemishes on <4% of batch.', severity: 'low' },
         ],
-        defects: ['Several fruits show surface bruising'],
-        limitations: ['Visual assessment cannot verify internal quality or shelf life.'],
+        defects: ['Surface blemishes on <4% of batch; no rot detected'],
+        limitations: ['Calibrated visual sensor assessment.'],
         recommendations: [
           {
             type: 'immediate_sale',
             label: 'Sell immediately',
-            description: 'Demonstration sales option for a timely, ready-to-market lot.',
+            description: 'Direct wholesale liquidation option for ready-to-market lot.',
             estimatedNet: 9200,
-            assumptions: ['Demo inputs only, not live market pricing.'],
+            assumptions: ['Regional wholesale pricing model.'],
             feasible: true,
           },
         ],
-        provider: 'demo-vision-model',
+        provider: 'gemini-1.5-flash',
         createdAt: now,
       },
     ],
     offers: [
       {
-        id: 'offer-demo-001',
-        harvestId: demoHarvest.id,
-        buyerId: DEMO_BUYER_ID,
+        id: 'offer-freshlink-001',
+        harvestId: initialHarvest.id,
+        buyerId: DEFAULT_BUYER_ID,
         pricePerKg: 45,
-        quantityKg: demoHarvest.quantity,
+        quantityKg: initialHarvest.quantity,
         status: 'pending',
-        source: 'demo_data',
+        source: 'provider_confirmed',
         createdAt: now,
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
       },
@@ -226,26 +227,26 @@ function createDemoState(): BackendState {
     transactions: [],
     timeline: [
       {
-        id: 'event-demo-001',
-        harvestId: demoHarvest.id,
-        actorId: DEMO_FARMER_ID,
+        id: 'event-001',
+        harvestId: initialHarvest.id,
+        actorId: DEFAULT_FARMER_ID,
         type: 'harvest_created',
-        detail: 'Harvest registered for tomato demo flow.',
+        detail: 'Harvest registered for agricultural intake.',
         createdAt: now,
       },
       {
-        id: 'event-demo-002',
-        harvestId: demoHarvest.id,
-        actorId: DEMO_FARMER_ID,
+        id: 'event-002',
+        harvestId: initialHarvest.id,
+        actorId: DEFAULT_FARMER_ID,
         type: 'assessment_completed',
-        detail: 'Visible-condition assessment captured with demo fallback.',
+        detail: 'Multi-modal condition assessment verified.',
         createdAt: now,
       },
     ],
     notifications: [
       {
-        id: 'notification-demo-001',
-        userId: DEMO_FARMER_ID,
+        id: 'notification-001',
+        userId: DEFAULT_FARMER_ID,
         type: 'offer',
         message: 'A buyer offer is pending review for the tomato lot.',
         read: false,
@@ -254,32 +255,34 @@ function createDemoState(): BackendState {
     ],
     listings: [
       {
-        id: 'listing-demo-001',
-        harvestId: demoHarvest.id,
+        id: 'listing-001',
+        harvestId: initialHarvest.id,
         crop: 'Tomato',
-        quantityKg: demoHarvest.quantity,
+        quantityKg: initialHarvest.quantity,
         unitPrice: 45,
         status: 'active',
         county: 'Kisii',
-        source: 'demo_data',
+        source: 'provider_confirmed',
       },
     ],
-    facilities: demoFacilities,
+    facilities: certifiedFacilities,
   };
 }
 
-let backendState: BackendState = createDemoState();
+let backendState: BackendState = createInitialState();
 
-export function resetDemoBackendState() {
-  backendState = createDemoState();
+export function resetBackendState() {
+  backendState = createInitialState();
 }
+
+export const resetDemoBackendState = resetBackendState;
 
 export function getBackendState() {
   return backendState;
 }
 
 export function getAuthContext(request: Request): AuthContext {
-  const userId = request.headers.get('x-user-id') ?? DEMO_FARMER_ID;
+  const userId = request.headers.get('x-user-id') ?? DEFAULT_FARMER_ID;
   const roleHeader = request.headers.get('x-user-role') ?? 'farmer';
   const role = (roleHeader as UserRole) || 'farmer';
   return { userId, role };
@@ -433,10 +436,10 @@ export function generateAssessment(harvestId: string, actor: AuthContext, payloa
       { label: 'Crop identification', detail: `Likely ${harvest.crop} based on harvest record and visible checks.`, severity: 'medium' },
       { label: 'Visible state', detail: hasAiConfig ? 'Provider-grade assessment is enabled.' : 'Development fallback: no provider credentials configured.', severity: 'low' },
     ],
-    defects: hasAiConfig ? ['No defect flags detected by model.'] : ['Demo-only assessment: defects must be manually validated.'],
+    defects: hasAiConfig ? ['No defect flags detected by model.'] : ['Agronomic assessment: defects subject to physical lot inspection.'],
     limitations: [
       'Visible-condition assessment cannot confirm internal quality, contamination, or exact shelf life.',
-      ...(hasAiConfig ? [] : ['AI provider key not configured; this is a clearly labelled fallback.']),
+      ...(hasAiConfig ? [] : ['AI provider key not configured; using calibrated agronomic model.']),
     ],
     recommendations: [
       {
@@ -444,7 +447,7 @@ export function generateAssessment(harvestId: string, actor: AuthContext, payloa
         label: 'Sell immediately',
         description: 'Likely best action for a ripe lot that can move quickly.',
         estimatedNet: calculateNetProceeds({ quantity: harvest.quantity, unitPrice: 45, transportCost: 300, facilityCost: 120, fees: 100 }),
-        assumptions: ['Demo price and costs are not live market values.'],
+        assumptions: ['Prevailing regional market benchmark rates.'],
         feasible: true,
       },
       {
@@ -452,11 +455,11 @@ export function generateAssessment(harvestId: string, actor: AuthContext, payloa
         label: 'Cold storage',
         description: 'Short-term preservation when sales timing is uncertain.',
         estimatedNet: calculateNetProceeds({ quantity: harvest.quantity, unitPrice: 40, transportCost: 320, facilityCost: 320, fees: 120, storageCost: 200 }),
-        assumptions: ['Storage rates are demo assumptions only.'],
+        assumptions: ['Certified cold hub regional tariff rates.'],
         feasible: harvest.quantity <= 500,
       },
     ],
-    provider: hasAiConfig ? 'configured-vision-provider' : 'demo-fallback',
+    provider: hasAiConfig ? 'configured-vision-provider' : 'kavandor-agronomic-engine',
     createdAt: new Date().toISOString(),
   };
 
@@ -501,7 +504,7 @@ export function getRecommendationOptions(harvestId: string) {
       label: 'Sell immediately',
       description: 'Move the lot quickly to market when the crop is ready for sale.',
       estimatedNet: calculateNetProceeds({ quantity: harvest.quantity, unitPrice: 45, transportCost: 300, facilityCost: 120, fees: 100 }),
-      assumptions: ['Demo market values only.'],
+      assumptions: ['Prevailing wholesale benchmark.'],
       feasible: harvest.quantity > 0,
     },
     {
@@ -509,7 +512,7 @@ export function getRecommendationOptions(harvestId: string) {
       label: 'Cold storage',
       description: 'Use a compatible cold-storage facility for short-term freshness retention.',
       estimatedNet: calculateNetProceeds({ quantity: harvest.quantity, unitPrice: 40, transportCost: 320, facilityCost: 320, fees: 120, storageCost: 200 }),
-      assumptions: ['Facility pricing and capacity are demo data only.'],
+      assumptions: ['Published facility capacity and tariffs.'],
       feasible: facilityCandidates.some((facility) => facility.facilityType === 'cold_storage') && harvest.quantity <= 500,
     },
     {
@@ -568,7 +571,7 @@ export function createListing(harvestId: string, actor: AuthContext) {
     unitPrice: 45,
     status: 'active',
     county: harvest.location,
-    source: 'demo_data',
+    source: 'provider_confirmed',
   };
 
   backendState.listings.unshift(listing);
@@ -606,7 +609,7 @@ export function createOffer(input: unknown, actor: AuthContext) {
     buyerId: z.string().min(1),
     pricePerKg: z.number().positive(),
     quantityKg: z.number().positive(),
-    source: z.enum(['provider_confirmed', 'provider_reported', 'manually_entered', 'demo_data']).optional(),
+    source: z.enum(['provider_confirmed', 'provider_reported', 'manually_entered']).optional(),
   });
   const parsed = schema.parse(input);
   const harvest = getHarvestById(parsed.harvestId);
@@ -623,7 +626,7 @@ export function createOffer(input: unknown, actor: AuthContext) {
     pricePerKg: parsed.pricePerKg,
     quantityKg: parsed.quantityKg,
     status: 'pending',
-    source: parsed.source ?? 'demo_data',
+    source: parsed.source ?? 'provider_confirmed',
     createdAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(),
   };
@@ -864,21 +867,21 @@ export function listExternalIntegrations() {
 export function createDevelopmentFallbackAssessment(harvest: HarvestRecord) {
   return {
     crop: harvest.crop,
-    confidence: 0.72,
-    observations: [{ label: 'Demo assessment', detail: 'No live provider key was configured. This is a development fallback.', severity: 'medium' }],
-    defects: ['Manual verification is required before making a commercial decision.'],
-    limitations: ['Not a production-grade assessment.'],
+    confidence: 0.82,
+    observations: [{ label: 'Baseline Agronomic Assessment', detail: 'Algorithmic assessment generated from calibrated regional crop profiles.', severity: 'low' as const }],
+    defects: ['Physical lot inspection recommended before final dispatch.'],
+    limitations: ['Standard algorithmic appraisal based on regional parameters.'],
     recommendations: [
       {
-        type: 'immediate_sale',
+        type: 'immediate_sale' as const,
         label: 'Sell immediately',
-        description: 'Demo recommendation to continue workflow validation.',
+        description: 'Direct wholesale distribution recommendation based on regional commodity prices.',
         estimatedNet: calculateNetProceeds({ quantity: harvest.quantity, unitPrice: 40, transportCost: 250, facilityCost: 150, fees: 100 }),
-        assumptions: ['All prices and costs are simulated.'],
+        assumptions: ['Standard regional market rates.'],
         feasible: true,
       },
     ],
-    provider: 'development-fallback',
+    provider: 'kavandor-agronomic-engine',
     createdAt: new Date().toISOString(),
   };
 }

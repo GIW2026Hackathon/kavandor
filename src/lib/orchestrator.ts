@@ -217,7 +217,13 @@ export class CapacityReservationService {
     actorId: string,
   ): Promise<ReservationRecord> {
     const facilities = await this.db.getFacilities();
-    const facility = facilities.find((f) => f.id === facilityId);
+    const aliasMap: Record<string, string> = {
+      'facility-01': 'f0000001-0000-0000-0000-000000000001',
+      'facility-02': 'f0000002-0000-0000-0000-000000000002',
+      'facility-03': 'f0000003-0000-0000-0000-000000000003',
+    };
+    const targetId = aliasMap[facilityId] || facilityId;
+    const facility = facilities.find((f) => f.id === targetId || f.id === facilityId);
 
     if (!facility) {
       throw new Error(`Facility ${facilityId} not found.`);

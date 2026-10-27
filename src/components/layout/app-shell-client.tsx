@@ -33,7 +33,7 @@ const roleNavigation: Record<WorkspaceRole, typeof farmerNavigation> = {
   ],
   transport_provider: [
     { href: '/transport', label: 'Transport overview', icon: LayoutDashboard },
-    { href: '/transport/requests/SONGA-DEMO-001', label: 'Active pickups', icon: Truck },
+    { href: '/transport/requests/TJ-2026-001', label: 'Active pickups', icon: Truck },
     { href: '/storage/requests', label: 'Delivery handoffs', icon: PackageOpen },
   ],
 };

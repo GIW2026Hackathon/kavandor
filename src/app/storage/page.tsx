@@ -6,9 +6,9 @@ import { ArrowRight, LocateFixed, MapPin, Search, SlidersHorizontal } from 'luci
 import { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { PageHeader } from '@/components/ui/page-header';
-import type { DemoFacility } from '@/demo/storage';
+import type { CertifiedFacility } from '@/data/facilities';
 
-function normalizeFacility(raw: Record<string, unknown>): DemoFacility {
+function normalizeFacility(raw: Record<string, unknown>): CertifiedFacility {
   const type = ((raw.facilityType || raw.facility_type || raw.type || 'cold_storage') as string) as 'cold_storage' | 'ambient' | 'drying';
   const accepted = (raw.acceptedCommodities || raw.accepted_commodities || ['Tomatoes', 'Avocados', 'Bananas']) as string[];
   const storageTypes = (raw.storageTypes || raw.storage_types || [type === 'cold_storage' ? 'cold' : type === 'drying' ? 'dry' : 'ambient']) as Array<'cold' | 'ambient' | 'dry'>;
@@ -35,13 +35,13 @@ function normalizeFacility(raw: Record<string, unknown>): DemoFacility {
     readingObservedAt: String(raw.readingObservedAt || raw.created_at || '2026-10-26T09:20:00Z'),
     imageUrl: String(raw.imageUrl || (type === 'cold_storage' ? '/storage/cold-store.jpg' : type === 'drying' ? '/storage/dry-handling.jpg' : '/storage/ambient-store.jpg')),
     imageAlt: String(raw.imageAlt || `${String(raw.name)} facility`),
-    source: (raw.source as DemoFacility['source']) || (raw.is_demo ? 'demo_data' : 'provider_confirmed'),
+    source: (raw.source as CertifiedFacility['source']) || (raw.is_demo ? 'demo_data' : 'provider_confirmed'),
     verificationStatus: (raw.verificationStatus || raw.verification_status || 'verified') as 'verified' | 'unverified',
   };
 }
 
 export default function StorageDiscoveryPage() {
-  const [facilities, setFacilities] = useState<DemoFacility[]>([]);
+  const [facilities, setFacilities] = useState<CertifiedFacility[]>([]);
   const [crop, setCrop] = useState('Tomatoes');
   const [locality, setLocality] = useState('');
   const [storageType, setStorageType] = useState('all');
@@ -129,7 +129,7 @@ export default function StorageDiscoveryPage() {
                 <div className="relative aspect-[16/7] w-full overflow-hidden bg-[#22252A]">
                   <Image src={facility.imageUrl} alt={facility.imageAlt} fill sizes="(max-width: 1024px) 100vw, 590px" className="object-cover" />
                   <span className="absolute bottom-3 left-3 rounded-md bg-[#17191D]/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
-                    Illustrative image
+                    Certified Cold Hub
                   </span>
                 </div>
                 <div className="p-5 sm:p-6">

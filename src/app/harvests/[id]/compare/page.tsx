@@ -2,19 +2,20 @@ import Link from 'next/link';
 import { ArrowRight, Check, Clock3, Warehouse } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { calculateNetProceeds } from '@/calculations/netProceeds';
-import { demoTomatoOffer, formatCurrency } from '@/components/demo/session';
+import { activeWholesaleOffer } from '@/data/market';
+import { formatCurrency } from '@/lib/currency';
 
 export const instant = false;
 
 export default function ComparePage() {
-  const saleNet = calculateNetProceeds({ quantity: demoTomatoOffer.quantity, unitPrice: demoTomatoOffer.unitPrice, transportCost: 300, facilityCost: 0, fees: 200 });
+  const saleNet = calculateNetProceeds({ quantity: activeWholesaleOffer.quantity, unitPrice: activeWholesaleOffer.unitPrice, transportCost: 300, facilityCost: 0, fees: 200 });
   const storageNet = calculateNetProceeds({ quantity: 220, unitPrice: 61, transportCost: 350, facilityCost: 150, fees: 268, storageCost: 4928 });
 
   const options = [
     {
       title: 'Direct Wholesale Liquidation',
       subtitle: 'Verified Institutional Buyer',
-      revenue: demoTomatoOffer.amount,
+      revenue: activeWholesaleOffer.amount,
       costs: 500,
       net: saleNet,
       timing: 'Collection within 12 hours',

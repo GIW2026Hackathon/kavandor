@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { ArrowLeft, Check, PackageCheck, ShieldCheck, X } from 'lucide-react';
 import { useState } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
-import { demoTomatoOffer, formatCurrency } from '@/components/demo/session';
+import { activeWholesaleOffer } from '@/data/market';
+import { formatCurrency } from '@/lib/currency';
 
 export default function OffersPage() {
   const [decision, setDecision] = useState<'pending' | 'accepted' | 'rejected'>('pending');
@@ -35,7 +36,7 @@ export default function OffersPage() {
               <div>
                 <p className="text-xs font-mono font-bold uppercase text-emerald-600">Verified Institutional Buyer</p>
                 <h2 className="mt-2 text-2xl font-bold text-[#17191D]">FreshLink Kisii</h2>
-                <p className="mt-1 text-sm text-[#74767B]">Offer received 26 Oct · Expires {demoTomatoOffer.expiresAt}</p>
+                <p className="mt-1 text-sm text-[#74767B]">Offer received 26 Oct · Expires {activeWholesaleOffer.expiresAt}</p>
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${
                 decision === 'accepted'
@@ -50,10 +51,10 @@ export default function OffersPage() {
 
             <div className="mt-7 grid grid-cols-2 gap-px bg-[#E2DED6] rounded-xl overflow-hidden border border-[#E2DED6] sm:grid-cols-4 shadow-2xs">
               {[
-                ['Total offer', formatCurrency(demoTomatoOffer.amount)],
-                ['Price unit', `${formatCurrency(demoTomatoOffer.unitPrice)} / kg`],
-                ['Quantity', `${demoTomatoOffer.quantity} ${demoTomatoOffer.unit}`],
-                ['Net estimate', formatCurrency(demoTomatoOffer.amount - 500)],
+                ['Total offer', formatCurrency(activeWholesaleOffer.amount)],
+                ['Price unit', `${formatCurrency(activeWholesaleOffer.unitPrice)} / kg`],
+                ['Quantity', `${activeWholesaleOffer.quantity} ${activeWholesaleOffer.unit}`],
+                ['Net estimate', formatCurrency(activeWholesaleOffer.amount - 500)],
               ].map(([label, value]) => (
                 <div key={label} className="bg-white p-4">
                   <p className="text-xs font-mono uppercase text-[#74767B]">{label}</p>
@@ -89,7 +90,7 @@ export default function OffersPage() {
                   <p className="font-bold">Agreement recorded</p>
                   <p className="mt-1 text-sm text-[#008765]/80">220 kg reserved for FreshLink Kisii.</p>
                 </div>
-                <Link href="/harvests/harvest-demo-001/timeline" className="text-sm font-bold text-[#008765] underline underline-offset-4">
+                <Link href="/harvests/KV-2026-001/timeline" className="text-sm font-bold text-[#008765] underline underline-offset-4">
                   View traceability
                 </Link>
               </div>

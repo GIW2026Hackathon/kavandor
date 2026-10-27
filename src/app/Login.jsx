@@ -133,7 +133,7 @@ function Login() {
                 </form>
 
                 <p className="register-text">
-                    Don't have an account?
+                    Don&apos;t have an account?
                     <a href="/register"> Register here</a>
                 </p>
 

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { demoFacilities, type DemoFacility } from '@/demo/storage';
+import { certifiedFacilities, type CertifiedFacility } from '@/data/facilities';
 import {
   type AssessmentRecord,
   type HarvestRecord,
@@ -51,7 +51,7 @@ export interface IDatabaseAdapter {
   saveAssessment(assessment: AssessmentRecord): Promise<AssessmentRecord>;
 
   // Facilities & Capacity
-  getFacilities(): Promise<DemoFacility[]>;
+  getFacilities(): Promise<CertifiedFacility[]>;
   getCapacitySlots(facilityId?: string): Promise<CapacitySlotRecord[]>;
   getReservations(filter?: { harvestId?: string; facilityId?: string }): Promise<ReservationRecord[]>;
   createReservation(data: {
@@ -189,12 +189,12 @@ export class MemoryDatabaseAdapter implements IDatabaseAdapter {
     return assessment;
   }
 
-  async getFacilities(): Promise<DemoFacility[]> {
-    return [...demoFacilities];
+  async getFacilities(): Promise<CertifiedFacility[]> {
+    return [...certifiedFacilities];
   }
 
   async getCapacitySlots(facilityId?: string): Promise<CapacitySlotRecord[]> {
-    // Generate synthetic capacity slots matching demo facilities
+    // Generate synthetic capacity slots matching certified facilities
     const facilities = await this.getFacilities();
     const slots: CapacitySlotRecord[] = facilities.map((f, i) => ({
       id: `slot-${f.id}-${i}`,
@@ -598,11 +598,11 @@ export class SupabaseDatabaseAdapter implements IDatabaseAdapter {
     };
   }
 
-  async getFacilities(): Promise<DemoFacility[]> {
+  async getFacilities(): Promise<CertifiedFacility[]> {
     const client = this.getClient();
     const { data, error } = await client.from('facilities').select('*');
     if (error || !data || data.length === 0) {
-      return [...demoFacilities];
+      return [...certifiedFacilities];
     }
 
     return data.map((f) => ({

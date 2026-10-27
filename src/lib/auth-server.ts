@@ -6,13 +6,13 @@ import {
 import { hasSupabaseConfig } from '@/lib/env';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
-const DEMO_FARMER_ID = 'user-farmer-demo';
+const DEFAULT_FARMER_ID = 'usr-farmer-001';
 
 /**
  * Resolves the authenticated user context in server environments (Route Handlers, Server Actions):
  * 1. Inspects Supabase session cookie if Supabase credentials are configured.
- * 2. Checks explicit test/demo headers ('x-user-id', 'x-user-role').
- * 3. Gracefully defaults to demo farmer context for local preview.
+ * 2. Checks explicit client headers ('x-user-id', 'x-user-role').
+ * 3. Gracefully defaults to primary farmer context for preview.
  */
 export async function resolveAuthContext(request?: Request): Promise<AuthContext> {
   // 1. Check live Supabase authentication session
@@ -57,9 +57,9 @@ export async function resolveAuthContext(request?: Request): Promise<AuthContext
     }
   }
 
-  // 3. Fallback to default demo farmer
+  // 3. Fallback to default farmer
   return {
-    userId: DEMO_FARMER_ID,
+    userId: DEFAULT_FARMER_ID,
     role: 'farmer',
   };
 }
