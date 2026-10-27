@@ -12,7 +12,8 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   return withAuthenticatedApi(request, ['farmer', 'facility_operator', 'operations_admin'], async ({ supabase }) => {
-    const { data, error } = await supabase.from('reservations').select('*')
+    const { data, error } = await supabase.from('reservations')
+      .select('*, facilities(name, county, location), harvests(crop, quantity, unit, harvest_date)')
       .order('created_at', { ascending: false }).limit(100);
     if (error) throw error;
     return NextResponse.json({ reservations: data ?? [] });

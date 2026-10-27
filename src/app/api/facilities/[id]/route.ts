@@ -1,7 +1,20 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { readJson } from '@/lib/api-errors';
-import { withAuthenticatedApi } from '@/lib/api-route';
+import { withAuthenticatedApi, withPublicApi } from '@/lib/api-route';
+import { getFacility } from '@/lib/server-backend';
+import { createSupabasePublicClient } from '@/lib/supabase-server';
+
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  return withPublicApi(async () => {
+    const { id } = await params;
+    const facility = await getFacility(createSupabasePublicClient(), id);
+    if (!facility) {
+      return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Facility not found.' } }, { status: 404 });
+    }
+    return NextResponse.json({ facility });
+  });
+}
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   return withAuthenticatedApi(request, ['facility_operator', 'operations_admin'], async ({ actor, supabase }) => {

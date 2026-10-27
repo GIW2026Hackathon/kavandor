@@ -95,7 +95,7 @@ export default async function DashboardPage() {
         <PageHeader
           eyebrow={nowFormatted}
           title={`Welcome, ${profile.fullName.split(' ')[0]}`}
-          description="Make informed post-harvest decisions by connecting harvest assessment with verified storage and market opportunities."
+          description="Find the right infrastructure and next move for each harvest, from preservation and processing to market preparation."
           action={
             <Link
               href="/harvests/new"
@@ -141,6 +141,19 @@ export default async function DashboardPage() {
             </div>
           ))}
         </div>
+
+        <section className="mt-6 flex flex-col gap-5 rounded-2xl border border-[#E2DED6] bg-white p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="max-w-3xl">
+            <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Explore more than storage</p>
+            <h2 className="mt-2 text-xl font-bold text-[#17191D]">Agri-Value Chain Facilities</h2>
+            <p className="mt-2 text-sm leading-6 text-[#74767B]">
+              Discover cold rooms, drying centres, mills, processors and aggregation hubs. Compare known service fees, capacity and what each option may help you achieve.
+            </p>
+          </div>
+          <Link href="/storage" className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#17191D] px-5 text-sm font-bold text-white transition hover:bg-[#22252A]">
+            Explore facilities <ChevronRight size={18} />
+          </Link>
+        </section>
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,.7fr)]">
           {/* Main Column: Actual Harvests */}

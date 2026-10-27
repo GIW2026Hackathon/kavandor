@@ -409,17 +409,90 @@ export async function listFacilities(
   params: { commodity?: string; county?: string; limit: number },
 ) {
   let query = supabase.from('facilities')
-    .select('id, name, county, location, type, facility_type, description, accepted_commodities, storage_types, price_per_unit, price_unit, price_period, minimum_quantity, verification_status, is_demo')
+    .select('id, name, county, location, type, description, address, latitude, longitude, facility_type, accepted_commodities, storage_types, price_per_unit, price_unit, price_period, minimum_quantity, capacity_unit, condition_targets, verification_status, verified_at, is_demo, demo_data, created_at')
     .limit(params.limit);
   if (params.county) query = query.ilike('county', `%${escapeLike(sanitizeFilter(params.county))}%`);
   const { data, error } = await query.order('name', { ascending: true });
   if (error) throw error;
-  return (data ?? []).filter((facility) =>
+  const facilities = (data ?? []).filter((facility) =>
     !params.commodity ||
     (Array.isArray(facility.accepted_commodities) && facility.accepted_commodities
       .some((commodity: unknown) => typeof commodity === 'string' &&
         commodity.toLowerCase() === params.commodity?.toLowerCase())),
   );
+  return getFacilityAvailability(supabase, facilities);
+}
+
+export async function getFacility(supabase: ServerSupabaseClient, facilityId: string) {
+  const { data, error } = await supabase.from('facilities')
+    .select('id, name, county, location, type, description, address, latitude, longitude, facility_type, accepted_commodities, storage_types, price_per_unit, price_unit, price_period, minimum_quantity, capacity_unit, condition_targets, verification_status, verified_at, is_demo, demo_data, created_at')
+    .eq('id', facilityId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return (await getFacilityAvailability(supabase, [data]))[0] ?? null;
+}
+
+async function getFacilityAvailability(supabase: ServerSupabaseClient, facilities: readonly Record<string, unknown>[]) {
+  if (facilities.length === 0) return [];
+  const { data: slots, error } = await supabase.from('capacity_slots')
+    .select('id, facility_id, capacity_kg, reserved_kg, window_start, window_end')
+    .in('facility_id', facilities.map((facility) => String(facility.id)))
+    .gte('window_end', new Date().toISOString())
+    .order('window_start', { ascending: true })
+    .limit(500);
+  if (error) throw error;
+
+  return facilities.map((facility) => ({
+    id: facility.id,
+    name: facility.name,
+    county: facility.county,
+    location: facility.location,
+    type: facility.type,
+    description: facility.description,
+    address: facility.address,
+    latitude: nullableNumber(facility.latitude),
+    longitude: nullableNumber(facility.longitude),
+    facilityType: facility.facility_type,
+    acceptedCommodities: stringArray(facility.accepted_commodities),
+    storageTypes: stringArray(facility.storage_types),
+    pricePerUnit: nullableNumber(facility.price_per_unit),
+    priceUnit: facility.price_unit,
+    pricePeriod: facility.price_period,
+    minimumQuantity: nullableNumber(facility.minimum_quantity),
+    capacityUnit: facility.capacity_unit,
+    conditionTargets: isPlainRecord(facility.condition_targets) ? facility.condition_targets : null,
+    verificationStatus: facility.verification_status,
+    verifiedAt: facility.verified_at,
+    isDemo: facility.is_demo === true || facility.demo_data === true,
+    source: facility.is_demo === true || facility.demo_data === true ? 'demo_data' : facility.verification_status,
+    createdAt: facility.created_at,
+    availabilityUpdatedAt: null,
+    availabilitySlots: (slots ?? [])
+      .filter((slot) => slot.facility_id === facility.id)
+      .map((slot) => ({
+        id: slot.id,
+        capacityKg: Number(slot.capacity_kg),
+        reservedKg: Number(slot.reserved_kg),
+        availableCapacityKg: Math.max(0, Number(slot.capacity_kg) - Number(slot.reserved_kg)),
+        windowStart: slot.window_start,
+        windowEnd: slot.window_end,
+      })),
+  }));
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function nullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export async function getRecommendations(supabase: ServerSupabaseClient, harvestId: string) {
@@ -455,7 +528,7 @@ export async function getRecommendations(supabase: ServerSupabaseClient, harvest
         availableCapacityKg,
         windowStart: slot?.window_start ?? null,
         windowEnd: slot?.window_end ?? null,
-        source: facility.is_demo ? 'demo_data' : facility.verification_status,
+        source: facility.isDemo ? 'demo_data' : facility.verificationStatus,
       };
     });
   });

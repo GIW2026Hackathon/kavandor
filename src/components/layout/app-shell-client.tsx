@@ -76,9 +76,12 @@ const roleMeta: Record<WorkspaceRole, RoleProfile> = {
 const farmerNavigation = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/harvests', label: 'My harvests', icon: Sprout },
-  { href: '/storage', label: 'Storage & preservation', icon: Warehouse },
+  { href: '/storage', label: 'Agri-Value Chain Facilities', icon: Warehouse },
+  { href: '/storage/requests', label: 'Facility requests', icon: PackageOpen },
+  { href: '/storage/inventory', label: 'My stored produce', icon: Boxes },
+  { href: '/storage/alerts', label: 'Storage alerts', icon: BellRing },
+  { href: '/transport', label: 'Transport & collections', icon: Truck },
   { href: '/marketplace', label: 'Marketplace', icon: Store },
-  { href: '/storage/alerts', label: 'Activity', icon: BellRing },
 ];
 
 const buyerNavigation = [
@@ -455,7 +458,9 @@ export function AppShellClient({
               )}
             >
               <Icon size={18} strokeWidth={active ? 2.5 : 1.8} />
-              <span className="truncate max-w-full">{item.label}</span>
+              <span className="truncate max-w-full">
+                {item.label.replace('Register harvest', 'Register').replace('Transport & collections', 'Transport').replace('Storage alerts', 'Alerts').replace('Agri-Value Chain Facilities', 'Facilities')}
+              </span>
             </Link>
           );
         })}
