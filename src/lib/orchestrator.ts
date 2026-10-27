@@ -43,6 +43,8 @@ export class CropAssessmentAgent {
       defects: aiResult.defects,
       limitations: aiResult.limitations,
       recommendations: aiResult.recommendations,
+      clarificationQuestions: aiResult.clarificationQuestions,
+      evidence: aiResult.evidence,
       provider: aiResult.provider,
       createdAt: now,
     };
@@ -66,46 +68,61 @@ export class CropAssessmentAgent {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Preservation Decision Service (Net Proceeds Calculation)
+// 2. Value-Addition Decision Service (Multi-Pathway Net Proceeds & Economics)
 // ---------------------------------------------------------------------------
 export interface PreservationOptionsResult {
   harvestId: string;
   recommendations: Array<{
-    type: 'immediate_sale' | 'storage' | 'drying' | 'aggregation';
+    type: 'immediate_sale' | 'storage' | 'drying' | 'aggregation' | 'processing' | 'grading_sorting' | 'dairy_chilling' | 'buyer_matching';
     label: string;
     description: string;
     grossKES: number;
     totalDeductionsKES: number;
     estimatedNetKES: number;
+    yieldRetentionPercent?: number;
+    suitabilityScore?: number;
+    suitabilityTier?: 'highly_recommended' | 'feasible' | 'requires_verification' | 'infeasible';
+    breakEvenTargetPriceKES?: number;
     assumptions: string[];
+    unknowns?: string[];
     feasible: boolean;
+    matchedProvider?: {
+      id: string;
+      name: string;
+      locality: string;
+      contactPhone: string;
+      serviceName: string;
+      pricingSummary: string;
+    };
+    actionLabel?: string;
+    actionHref?: string;
   }>;
 }
 
 export class PreservationDecisionService {
-  evaluate(harvest: HarvestRecord, baseUnitPrice = 45): PreservationOptionsResult {
+  evaluate(harvest: HarvestRecord, baseUnitPrice = 45, clarificationAnswers?: Record<string, string>): PreservationOptionsResult {
     const qty = harvest.quantity;
+    const cropLower = harvest.crop.toLowerCase();
 
-    // 1. Immediate Sale
+    // Default calculations for primary paths
     const immUnitPrice = baseUnitPrice;
     const immGross = qty * immUnitPrice;
     const immTransport = 250;
-    const immFacility = 0;
     const immFees = Math.round(immGross * 0.02);
     const immNet = calculateNetProceeds({
       quantity: qty,
       unitPrice: immUnitPrice,
       transportCost: immTransport,
-      facilityCost: immFacility,
+      facilityCost: 0,
       fees: immFees,
     });
 
-    // 2. Cold Storage (7 days buffer)
-    const storeUnitPrice = Math.round(baseUnitPrice * 1.35); // 35% seasonal arbitrage
+    // Cold storage
+    const storeUnitPrice = Math.round(baseUnitPrice * 1.35);
     const storeGross = qty * storeUnitPrice;
     const storeTransport = 350;
     const storeFacilityFee = 150;
-    const storageRatePerDay = 3.2; // KES/kg/day
+    const storageRatePerDay = 3.2;
     const storageDurationDays = 7;
     const storageTotalCost = Math.round(qty * storageRatePerDay * storageDurationDays);
     const storeFees = Math.round(storeGross * 0.02);
@@ -118,13 +135,13 @@ export class PreservationDecisionService {
       storageCost: storageTotalCost,
     });
 
-    // 3. Solar Drying / Dehydration
-    const dryRecoveryRatio = 0.18; // 18% weight retention for dried produce
+    // Solar drying
+    const dryRecoveryRatio = cropLower.includes('tomato') ? 0.08 : 0.18;
     const driedQty = Number((qty * dryRecoveryRatio).toFixed(1));
-    const driedUnitPrice = baseUnitPrice * 7.5; // premium dried value
+    const driedUnitPrice = cropLower.includes('tomato') ? 550 : baseUnitPrice * 7.5;
     const driedGross = driedQty * driedUnitPrice;
     const dryTransport = 200;
-    const dryingProcessingCost = Math.round(qty * 4.5); // KES 4.50/fresh kg
+    const dryingProcessingCost = Math.round(qty * 4.5);
     const dryFees = Math.round(driedGross * 0.02);
     const dryNet = calculateNetProceeds({
       quantity: driedQty,
@@ -135,48 +152,102 @@ export class PreservationDecisionService {
       dryingCost: dryingProcessingCost,
     });
 
+    // Puree / Processing
+    const pureeYieldRatio = 0.45;
+    const pureeQty = Number((qty * pureeYieldRatio).toFixed(1));
+    const pureeUnitPrice = 140;
+    const pureeGross = Math.round(pureeQty * pureeUnitPrice);
+    const pureeProcCost = Math.round(qty * 5.0);
+    const pureeTransport = 300;
+    const pureeNet = pureeGross - pureeProcCost - pureeTransport;
+
+    const recommendations: PreservationOptionsResult['recommendations'] = [
+      {
+        type: 'immediate_sale',
+        label: 'Immediate Local Wholesale Liquidation',
+        description: 'Direct wholesale delivery to Kisii town municipal market within 12 hours.',
+        grossKES: immGross,
+        totalDeductionsKES: immGross - immNet,
+        estimatedNetKES: immNet,
+        yieldRetentionPercent: 100,
+        suitabilityScore: 80,
+        suitabilityTier: 'feasible',
+        assumptions: [`Market clearing rate: KES ${immUnitPrice}/kg`, `Transport KES ${immTransport}`, `Platform escrow fee 2% (KES ${immFees})`],
+        unknowns: ['Subject to arrival scale tare check'],
+        feasible: true,
+        actionLabel: 'Review Buyer Offers',
+        actionHref: `/offers?harvestId=${harvest.id}`,
+      },
+      {
+        type: 'processing',
+        label: 'Agro-Processing into Tomato Puree / Sauce',
+        description: 'Transform ripe tomatoes into vacuum-sealed 24-Brix shelf-stable puree pouches at Nyakoe Agro-Processing Center.',
+        grossKES: pureeGross,
+        totalDeductionsKES: pureeProcCost + pureeTransport,
+        estimatedNetKES: pureeNet,
+        yieldRetentionPercent: 45,
+        suitabilityScore: 88,
+        suitabilityTier: 'highly_recommended',
+        assumptions: [
+          `Puree yield: ${pureeQty} kg (45% recovery)`,
+          `Wholesale puree price: KES ${pureeUnitPrice}/kg`,
+          `Pulping & packaging fee: KES 5.00/fresh kg (Total KES ${pureeProcCost})`,
+        ],
+        unknowns: ['Turnaround time: ~24 hours from intake'],
+        feasible: cropLower.includes('tomato'),
+        actionLabel: 'Request Processing Booking',
+        actionHref: `/storage?type=processing&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
+      },
+      {
+        type: 'storage',
+        label: 'Cold Storage Buffer (7 Days)',
+        description: 'Store in verified Kisii/Nyamira cold facility to bypass immediate market glut.',
+        grossKES: storeGross,
+        totalDeductionsKES: storeGross - storeNet,
+        estimatedNetKES: storeNet,
+        yieldRetentionPercent: 97,
+        suitabilityScore: 82,
+        suitabilityTier: 'feasible',
+        breakEvenTargetPriceKES: Math.ceil((immNet + (storeGross - storeNet)) / (qty * 0.97)),
+        assumptions: [
+          `Target price post-hold: KES ${storeUnitPrice}/kg`,
+          `Cold room tariff: KES ${storageRatePerDay}/kg/day (${storageDurationDays} days = KES ${storageTotalCost})`,
+          `Intake handling: KES ${storeFacilityFee}`,
+          `Estimated natural weight shrinkage: 3%`,
+        ],
+        unknowns: ['Price appreciation depends on supply fluctuations in Kisii Town'],
+        feasible: qty <= 1000,
+        actionLabel: 'Find & Reserve Cold Storage',
+        actionHref: `/storage?type=cold&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
+      },
+      {
+        type: 'drying',
+        label: 'Solar Tunnel Dehydration Value Addition',
+        description: 'Process at Keumbu drying hub into shelf-stable packaged dried slices.',
+        grossKES: Math.round(driedGross),
+        totalDeductionsKES: Math.round(driedGross - dryNet),
+        estimatedNetKES: Math.round(dryNet),
+        yieldRetentionPercent: Math.round(dryRecoveryRatio * 100),
+        suitabilityScore: 75,
+        suitabilityTier: 'feasible',
+        assumptions: [
+          `Dried yield: ${driedQty} kg (${Math.round(dryRecoveryRatio * 100)}% recovery)`,
+          `Processed price KES ${driedUnitPrice}/kg`,
+          `Drying energy & labor: KES ${dryingProcessingCost}`,
+        ],
+        unknowns: ['Solar drying turnaround: 36-48 hours depending on weather'],
+        feasible: ['banana', 'tomato', 'mango', 'maize', 'grain', 'onion'].some((c) => cropLower.includes(c)),
+        actionLabel: 'Explore Solar Drying Hub',
+        actionHref: `/storage?type=drying&harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${qty}`,
+      },
+    ];
+
+    // Sort strictly by suitability score (no hardcoded storage priority)
+    recommendations.sort((a, b) => (b.suitabilityScore || 0) - (a.suitabilityScore || 0));
+
     return {
       harvestId: harvest.id,
-      recommendations: [
-        {
-          type: 'immediate_sale',
-          label: 'Immediate Local Liquidation',
-          description: 'Direct wholesale delivery to Kisii town municipal market within 12 hours.',
-          grossKES: immGross,
-          totalDeductionsKES: immGross - immNet,
-          estimatedNetKES: immNet,
-          assumptions: [`Market price KES ${immUnitPrice}/kg`, `Transport KES ${immTransport}`, `Platform fee 2% (KES ${immFees})`],
-          feasible: true,
-        },
-        {
-          type: 'storage',
-          label: 'Cold Storage Buffer (7 Days)',
-          description: 'Store in verified Kisii/Nyamira cold facility to bypass immediate market glut.',
-          grossKES: storeGross,
-          totalDeductionsKES: storeGross - storeNet,
-          estimatedNetKES: storeNet,
-          assumptions: [
-            `Target price KES ${storeUnitPrice}/kg after hold`,
-            `Cold room fee: KES ${storageRatePerDay}/kg/day (${storageDurationDays} days = KES ${storageTotalCost})`,
-            `Facility intake fee: KES ${storeFacilityFee}`,
-          ],
-          feasible: qty <= 1000,
-        },
-        {
-          type: 'drying',
-          label: 'Solar Drying Value Addition',
-          description: 'Process at Keumbu drying hub into shelf-stable packaged dried slices.',
-          grossKES: Math.round(driedGross),
-          totalDeductionsKES: Math.round(driedGross - dryNet),
-          estimatedNetKES: Math.round(dryNet),
-          assumptions: [
-            `Dried yield: ${driedQty} kg (${Math.round(dryRecoveryRatio * 100)}% recovery)`,
-            `Processed price KES ${driedUnitPrice}/kg`,
-            `Drying energy & labor: KES ${dryingProcessingCost}`,
-          ],
-          feasible: ['banana', 'tomato', 'mango', 'maize', 'grain', 'onion'].some((c) => harvest.crop.toLowerCase().includes(c)),
-        },
-      ],
+      recommendations,
     };
   }
 }

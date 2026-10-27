@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { connection } from 'next/server';
-import { ArrowLeft, ArrowRight, Eye, Info, TriangleAlert, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, Info, TriangleAlert, ShieldCheck, Sparkles } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { QuantityDisplay } from '@/components/ui/quantity-display';
@@ -9,6 +9,10 @@ import { StatusBadge, type HarvestStatus } from '@/components/ui/status-badge';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server';
 import { assessHarvest } from '@/lib/ai';
 import { ReAssessButton } from '@/components/harvest/reassess-button';
+import { ClarificationWidget } from '@/components/harvest/clarification-widget';
+import { EvidenceBreakdown } from '@/components/harvest/evidence-breakdown';
+import { PathwayCard } from '@/components/harvest/pathway-card';
+import { ValueAdditionEngine, type ValueAdditionPathway, type ClarificationQuestion, type EvidenceModel } from '@/lib/value-addition-engine';
 
 export const instant = false;
 
@@ -37,6 +41,10 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
     observations: Array<{ label: string; detail: string; severity?: string }>;
     defects: string[];
     limitations: string[];
+    recommendations?: ValueAdditionPathway[];
+    clarification_questions?: ClarificationQuestion[];
+    clarificationQuestions?: ClarificationQuestion[];
+    evidence?: EvidenceModel;
     provider: string;
   } | null = null;
 
@@ -75,7 +83,7 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
       if (aData) {
         assessment = aData;
       } else {
-        // Run agronomic assessment with Gemini Vision
+        // Run agronomic assessment with Gemini Vision & Value Addition Engine
         const result = await assessHarvest({
           crop: harvest.crop,
           quantity: Number(harvest.quantity),
@@ -91,6 +99,9 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
           observations: result.observations,
           defects: result.defects,
           limitations: result.limitations,
+          recommendations: result.recommendations as unknown as ValueAdditionPathway[],
+          clarification_questions: result.clarificationQuestions,
+          evidence: result.evidence,
           provider: result.provider,
         };
 
@@ -103,6 +114,9 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
             observations: result.observations,
             defects: result.defects,
             limitations: result.limitations,
+            recommendations: result.recommendations,
+            clarification_questions: result.clarificationQuestions ?? [],
+            evidence: result.evidence ?? {},
             provider: result.provider,
             assessment_mode: 'provider',
           }, { onConflict: 'harvest_id' });
@@ -147,6 +161,42 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
     }
   }
 
+  // Ensure deterministic value-addition pathways, clarification questions, and evidence model exist
+  const existingQuestions = assessment?.clarification_questions || assessment?.clarificationQuestions;
+  const existingRecommendations = assessment?.recommendations;
+  const existingEvidence = assessment?.evidence;
+
+  let pathways: ValueAdditionPathway[] = (existingRecommendations && existingRecommendations.length > 0)
+    ? existingRecommendations
+    : [];
+
+  let clarificationQuestions: ClarificationQuestion[] = (existingQuestions && existingQuestions.length > 0)
+    ? existingQuestions
+    : [];
+
+  let evidence: EvidenceModel = existingEvidence || {
+    visualObservations: [],
+    farmerReportedFacts: [],
+    verifiedProviderInfo: [],
+    estimates: [],
+    unknowns: [],
+  };
+
+  if (pathways.length === 0 || clarificationQuestions.length === 0) {
+    const freshEval = ValueAdditionEngine.evaluatePathways({
+      crop: harvest.crop,
+      quantity: Number(harvest.quantity),
+      unit: harvest.unit,
+      location: harvest.location,
+      handlingNotes: harvest.handling_notes || undefined,
+    });
+    if (pathways.length === 0) pathways = freshEval.pathways;
+    if (clarificationQuestions.length === 0) clarificationQuestions = freshEval.clarificationQuestions;
+    if (!existingEvidence || (existingEvidence.visualObservations.length === 0 && existingEvidence.farmerReportedFacts.length === 0)) {
+      evidence = freshEval.evidence;
+    }
+  }
+
   const dateStr = new Date(harvest.harvest_date).toLocaleDateString('en-KE', {
     day: 'numeric',
     month: 'short',
@@ -176,6 +226,7 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
           <StatusBadge status={harvest.status as HarvestStatus} />
         </div>
 
+        {/* Harvest Visual Preview and Condition Appraisal */}
         <div className="mt-7 grid gap-6 lg:grid-cols-[.72fr_1.28fr]">
           {/* Produce Visual Preview & Batch Stamp */}
           <div className="relative min-h-72 overflow-hidden rounded-2xl bg-[#17191D] border border-[#22252A] shadow-md flex flex-col justify-end p-5">
@@ -221,7 +272,7 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
                   Grade: {assessment?.confidence && assessment.confidence > 0.8 ? 'A-Standard' : 'Commercial Grade'}
                 </h2>
                 <p className="mt-1 text-xs text-[#74767B]">
-                  Provider: <span className="font-mono font-semibold text-[#17191D]">{assessment?.provider || 'kavandor-agronomic-engine'}</span>
+                  Assessment Engine: <span className="font-mono font-semibold text-[#17191D]">{assessment?.provider || 'kavandor-agronomic-engine'}</span>
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2">
@@ -271,43 +322,72 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
           </section>
         </div>
 
-        {/* Actionable Next Move Banner */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.7fr]">
-          <section className="rounded-2xl border border-[#00C896]/30 border-l-4 border-l-[#00C896] bg-[#E6F9F4] p-5 sm:p-6">
-            <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#008765]">
-              Actionable Post-Harvest Decision
-            </p>
-            <h2 className="mt-2 text-xl font-bold text-[#17191D]">
-              Compare preservation and selling pathways
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#008765]">
-              Model net returns across immediate local wholesale liquidation, cold room preservation holding, and suitable solar drying options.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href={`/harvests/${harvest.id}/compare`}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-5 text-sm font-bold text-white shadow-sm transition active:scale-98"
-              >
-                Compare options <ArrowRight size={17} />
-              </Link>
-              <Link
-                href={`/storage?harvestId=${harvest.id}&crop=${harvest.crop}&quantity=${harvest.quantity}`}
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#E2DED6] bg-white px-5 text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] transition shadow-2xs"
-              >
-                Find certified cold storage
-              </Link>
-            </div>
-          </section>
+        {/* Interactive Clarification Loop */}
+        {clarificationQuestions.length > 0 && (
+          <div className="mt-8">
+            <ClarificationWidget
+              harvestId={harvest.id}
+              questions={clarificationQuestions}
+            />
+          </div>
+        )}
 
-          <section className="rounded-2xl border border-[#E2DED6] bg-white p-5 shadow-xs">
-            <div className="flex items-center gap-2 text-emerald-800">
-              <ShieldCheck size={20} className="text-emerald-600" />
-              <h2 className="font-bold text-[#17191D]">Intake Verification Gate</h2>
+        {/* Ranked Feasible Value-Addition Pathways */}
+        <section className="mt-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles size={20} className="text-[#FF5A1F]" />
+                <h2 className="text-2xl font-extrabold text-[#17191D]">
+                  Ranked Value-Addition Pathways
+                </h2>
+              </div>
+              <p className="mt-1 max-w-2xl text-xs sm:text-sm text-[#74767B]">
+                Objective ranking determined by crop condition, transformation yields, regional provider capacity, and net proceeds. Storage is recommended only when economics and maturity justify holding.
+              </p>
             </div>
-            <p className="mt-2 text-sm leading-6 text-[#74767B]">
-              Field appraisal provides immediate decision intelligence. Final batch weight and grade are officially certified by the packhouse electronic scale upon arrival.
-            </p>
-          </section>
+            <Link
+              href={`/harvests/${harvest.id}/compare`}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF5A1F] hover:underline"
+            >
+              Detailed side-by-side economics <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            {pathways.slice(0, 4).map((p, idx) => (
+              <PathwayCard
+                key={`${p.type}-${idx}`}
+                pathway={p}
+                harvestId={harvest!.id}
+                isTopRecommendation={idx === 0}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Structured Evidence Breakdown Taxonomy */}
+        <div className="mt-8">
+          <EvidenceBreakdown evidence={evidence} />
+        </div>
+
+        {/* Intake Verification Gate Notice */}
+        <div className="mt-8 rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck size={26} className="mt-1 shrink-0 text-emerald-600" />
+            <div>
+              <h3 className="font-bold text-[#17191D]">Intake Verification &amp; Passcode Custody Gate</h3>
+              <p className="mt-1 text-xs text-[#74767B] max-w-2xl">
+                Field appraisals model estimated returns. When delivering produce to a processor, packhouse, or cold store, final weight is verified on certified digital intake scales. Stored goods require an operator sign-off and unique release passcode.
+              </p>
+            </div>
+          </div>
+          <Link
+            href={`/storage?harvestId=${harvest.id}&crop=${encodeURIComponent(harvest.crop)}&quantity=${harvest.quantity}`}
+            className="shrink-0 inline-flex h-10 items-center gap-2 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] px-4 text-xs font-bold text-[#17191D] hover:bg-white transition"
+          >
+            Browse All Regional Providers <ArrowRight size={14} />
+          </Link>
         </div>
       </div>
     </AppShell>

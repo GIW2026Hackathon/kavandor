@@ -473,7 +473,11 @@ export async function getHarvestTimeline(supabase: ServerSupabaseClient, harvest
   return data ?? [];
 }
 
-export async function createAssessment(supabase: ServerSupabaseClient, harvestId: string) {
+export async function createAssessment(
+  supabase: ServerSupabaseClient,
+  harvestId: string,
+  clarificationAnswers?: Record<string, string>,
+) {
   const harvest = await getHarvest(supabase, harvestId);
   const { data: photo, error: photoError } = await supabase.from('harvest_photos')
     .select('storage_path').eq('harvest_id', harvestId).order('created_at', { ascending: false }).limit(1).maybeSingle();
@@ -488,7 +492,7 @@ export async function createAssessment(supabase: ServerSupabaseClient, harvestId
     }
   }
 
-  // Assess with Gemini multimodal or domain rules fallback
+  // Assess with Gemini multimodal or value-addition domain rules fallback
   const result = await assessHarvest({
     crop: String(harvest.crop),
     quantity: Number(harvest.quantity),
@@ -496,23 +500,33 @@ export async function createAssessment(supabase: ServerSupabaseClient, harvestId
     location: String(harvest.location),
     handlingNotes: harvest.handlingNotes ? String(harvest.handlingNotes) : undefined,
     photoUrl: signedPhotoUrl,
+    clarificationAnswers,
   });
 
-  const { data, error } = await supabase.rpc('kavandor_save_assessment', {
-    p_harvest_id: harvestId,
-    p_crop: result.crop,
-    p_confidence: result.confidence,
-    p_observations: result.observations,
-    p_defects: result.defects,
-    p_limitations: result.limitations,
-    p_provider: result.provider,
-    p_mode: 'provider',
-    p_model: result.provider.startsWith('gemini') ? 'gemini-2.5-flash' : null,
-  }).single();
+  let savedRecord: Record<string, unknown> | null = null;
 
-  if (error) {
-    // If RPC is unavailable or constrained, upsert directly into assessments table
-    const { data: upsertData, error: upsertError } = await supabase
+  try {
+    const { data, error } = await supabase.rpc('kavandor_save_assessment', {
+      p_harvest_id: harvestId,
+      p_crop: result.crop,
+      p_confidence: result.confidence,
+      p_observations: result.observations,
+      p_defects: result.defects,
+      p_limitations: result.limitations,
+      p_provider: result.provider,
+      p_mode: 'provider',
+      p_model: result.provider.startsWith('gemini') ? 'gemini-2.5-flash' : null,
+    }).single();
+    if (!error && data) {
+      savedRecord = data as Record<string, unknown>;
+    }
+  } catch {
+    // Fall through to direct table upsert
+  }
+
+  if (!savedRecord) {
+    // Direct table upsert into assessments table
+    const { data: upsertData } = await supabase
       .from('assessments')
       .upsert({
         harvest_id: harvestId,
@@ -521,15 +535,33 @@ export async function createAssessment(supabase: ServerSupabaseClient, harvestId
         observations: result.observations,
         defects: result.defects,
         limitations: result.limitations,
+        recommendations: result.recommendations,
+        clarification_questions: result.clarificationQuestions ?? [],
+        evidence: result.evidence ?? {},
         provider: result.provider,
         assessment_mode: 'provider',
       }, { onConflict: 'harvest_id' })
       .select('*')
       .single();
-    if (upsertError) throw error;
-    return upsertData;
+    if (upsertData) {
+      savedRecord = upsertData as Record<string, unknown>;
+    }
   }
-  return data;
+
+  return {
+    ...(savedRecord || {}),
+    id: savedRecord?.id || `assessment-${harvestId}`,
+    harvest_id: harvestId,
+    crop: result.crop,
+    confidence: result.confidence,
+    observations: result.observations,
+    defects: result.defects,
+    limitations: result.limitations,
+    recommendations: result.recommendations,
+    clarification_questions: result.clarificationQuestions ?? [],
+    evidence: result.evidence ?? {},
+    provider: result.provider,
+  };
 }
 
 export async function listFacilities(

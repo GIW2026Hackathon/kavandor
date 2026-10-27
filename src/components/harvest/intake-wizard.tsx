@@ -31,6 +31,8 @@ type HarvestDraft = {
   unit: (typeof HARVEST_UNITS)[number];
   harvestDate: string;
   harvestTime: string;
+  ripeness: string;
+  sortingStatus: string;
   handlingNotes: string;
   availability: string;
   location: string;
@@ -45,6 +47,8 @@ const initialDraft: HarvestDraft = {
   unit: 'kg',
   harvestDate: '2026-10-26',
   harvestTime: '09:30',
+  ripeness: 'Breaker / Turning (pink-yellow, firm)',
+  sortingStatus: 'Basic field sorting (culled rot)',
   handlingNotes: 'Collected in ventilated crates and kept in shade.',
   availability: 'Available today',
   location: 'Nyakundi farm',
@@ -139,7 +143,11 @@ export function IntakeWizard() {
             quantity: Number(draft.quantity) || 1,
             harvestDate: safeHarvestDate,
             unit: draft.unit,
-            handlingNotes: draft.handlingNotes || undefined,
+            handlingNotes: [
+              draft.handlingNotes,
+              draft.ripeness ? `Maturity: ${draft.ripeness}` : '',
+              draft.sortingStatus ? `Grading: ${draft.sortingStatus}` : '',
+            ].filter(Boolean).join(' | ') || undefined,
             availability: draft.availability || undefined,
             location: draft.location.trim(),
             county: draft.county || undefined,
@@ -221,12 +229,30 @@ export function IntakeWizard() {
           </Fieldset>
         )}
         {step === 1 && (
-          <Fieldset title="When and how was it harvested?" copy="Use the details you can verify. You can edit these entries before submitting.">
+          <Fieldset title="When and how was it harvested?" copy="Use the details you can verify. Structured condition indicators help determine the best value-addition pathway.">
             <div className="grid gap-5 sm:grid-cols-2">
               <Input label="Harvest date" value={draft.harvestDate} onChange={(value) => update('harvestDate', value)} type="date" />
               <Input label="Harvest time" value={draft.harvestTime} onChange={(value) => update('harvestTime', value)} type="time" />
+              <Select
+                label={draft.crop.toLowerCase().includes('milk') ? 'Milking timing & condition' : 'Maturity & ripeness stage'}
+                value={draft.ripeness}
+                onChange={(value) => update('ripeness', value)}
+                options={
+                  draft.crop.toLowerCase().includes('milk')
+                    ? ['Morning milking (fresh, warm)', 'Evening milking (pre-cooled)', 'Mixed bulk batch']
+                    : draft.crop.toLowerCase().includes('tomato')
+                      ? ['Breaker / Turning (pink-yellow, firm)', 'Firm Ripe (full red, firm)', 'Soft Ripe (processing grade)', 'Mature Green']
+                      : ['Optimal commercial maturity', 'Slightly early / breaker', 'Fully ripe', 'Overripe / processing grade']
+                }
+              />
+              <Select
+                label="Sorting & grading status"
+                value={draft.sortingStatus}
+                onChange={(value) => update('sortingStatus', value)}
+                options={['Basic field sorting (culled rot)', 'Field-run unsorted', 'Size & quality graded']}
+              />
               <Select label="Availability" value={draft.availability} onChange={(value) => update('availability', value)} options={['Available today', 'Available in 2–3 days', 'Available this week']} />
-              <div className="sm:col-span-2"><TextArea label="Handling or storage conditions" value={draft.handlingNotes} onChange={(value) => update('handlingNotes', value)} /></div>
+              <div className="sm:col-span-2"><TextArea label="Handling or field notes" value={draft.handlingNotes} onChange={(value) => update('handlingNotes', value)} placeholder="e.g. Picked in morning, packed in ventilated crates, kept shaded." /></div>
             </div>
           </Fieldset>
         )}

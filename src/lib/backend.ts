@@ -43,13 +43,44 @@ export interface AssessmentRecord {
   defects: string[];
   limitations: string[];
   recommendations: Array<{
-    type: 'immediate_sale' | 'storage' | 'drying' | 'aggregation';
+    type: 'immediate_sale' | 'storage' | 'drying' | 'aggregation' | 'processing' | 'grading_sorting' | 'dairy_chilling' | 'buyer_matching';
     label: string;
     description: string;
-    estimatedNet: number;
+    estimatedNet?: number | null;
+    grossRevenue?: number | null;
+    totalDeductions?: number | null;
+    yieldRetentionPercent?: number;
+    suitabilityScore?: number;
+    suitabilityTier?: 'highly_recommended' | 'feasible' | 'requires_verification' | 'infeasible';
     assumptions: string[];
+    unknowns?: string[];
     feasible: boolean;
+    matchedProvider?: {
+      id: string;
+      name: string;
+      locality: string;
+      contactPhone: string;
+      serviceName: string;
+      pricingSummary: string;
+    };
+    actionLabel?: string;
+    actionHref?: string;
   }>;
+  clarificationQuestions?: Array<{
+    id: string;
+    question: string;
+    context: string;
+    materialImpact: string;
+    options: string[];
+    answered?: string;
+  }>;
+  evidence?: {
+    visualObservations: string[];
+    farmerReportedFacts: string[];
+    verifiedProviderInfo: string[];
+    estimates: string[];
+    unknowns: string[];
+  };
   provider: string;
   createdAt: string;
 }
