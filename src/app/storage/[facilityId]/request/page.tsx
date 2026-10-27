@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { notFound } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { StorageRequestWizard } from '@/components/storage/storage-request-wizard';
@@ -12,6 +13,7 @@ export default async function StorageRequestPage({
   params: Promise<{ facilityId: string }>;
   searchParams: Promise<{ harvestId?: string; quantity?: string; crop?: string }>;
 }) {
+  await connection();
   const { facilityId } = await params;
   const { harvestId, quantity, crop } = await searchParams;
   const facility = findFacility(facilityId);

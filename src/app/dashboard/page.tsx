@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import {
   ArrowRight,
   ChevronRight,
@@ -18,6 +19,7 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 export const instant = false;
 
 export default async function DashboardPage() {
+  await connection();
   const profile = await resolveAuthContext();
 
   // Load actual harvests and events from Supabase

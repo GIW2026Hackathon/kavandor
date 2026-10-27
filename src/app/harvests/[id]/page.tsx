@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { ArrowLeft, ArrowRight, Eye, Info, TriangleAlert, ShieldCheck } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
@@ -12,6 +13,7 @@ import { ReAssessButton } from '@/components/harvest/reassess-button';
 export const instant = false;
 
 export default async function HarvestDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await connection();
   const { id } = await params;
 
   let harvest: {

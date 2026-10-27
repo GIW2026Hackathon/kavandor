@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Check, Clock3, Info, Scale, Warehouse } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
@@ -9,6 +10,7 @@ import { PreservationDecisionService } from '@/lib/orchestrator';
 export const instant = false;
 
 export default async function ComparePage({ params }: { params: Promise<{ id: string }> }) {
+  await connection();
   const { id } = await params;
   const db = getDatabaseAdapter();
   let harvest = await db.getHarvestById(id);

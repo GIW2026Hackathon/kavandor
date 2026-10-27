@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { AppShell } from '@/components/layout/app-shell';
 import { InventoryClient, type PendingIntakeReservation, type StoredBatchItem } from '@/components/storage/inventory-client';
 import { PageHeader } from '@/components/ui/page-header';
@@ -32,6 +33,7 @@ interface PendingReservationRow {
 }
 
 export default async function StoredProducePage() {
+  await connection();
   const auth = await resolveAuthContext();
   const userRole = auth?.role || 'farmer';
   const admin = createSupabaseAdminClient();
