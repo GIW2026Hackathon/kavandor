@@ -1,7 +1,7 @@
 create extension if not exists "uuid-ossp";
 
 create table if not exists public.profiles (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   email text not null unique,
   full_name text,
   role text not null check (role in ('farmer', 'buyer', 'facility_operator', 'transport_provider', 'operations_admin')),
@@ -10,7 +10,7 @@ create table if not exists public.profiles (
 );
 
 create table if not exists public.farms (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references public.profiles(id) on delete cascade,
   name text not null,
   county text not null,
@@ -19,7 +19,7 @@ create table if not exists public.farms (
 );
 
 create table if not exists public.harvests (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   farmer_id uuid not null references public.profiles(id) on delete cascade,
   farm_id uuid references public.farms(id),
   crop text not null,
@@ -35,14 +35,14 @@ create table if not exists public.harvests (
 );
 
 create table if not exists public.harvest_photos (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   harvest_id uuid not null references public.harvests(id) on delete cascade,
   storage_path text not null,
   created_at timestamptz not null default now()
 );
 
 create table if not exists public.assessments (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   harvest_id uuid not null unique references public.harvests(id) on delete cascade,
   crop text not null,
   confidence numeric(4,3) check (confidence between 0 and 1),
@@ -54,7 +54,7 @@ create table if not exists public.assessments (
 );
 
 create table if not exists public.facilities (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   operator_id uuid references public.profiles(id),
   county text not null,
@@ -65,7 +65,7 @@ create table if not exists public.facilities (
 );
 
 create table if not exists public.capacity_slots (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   facility_id uuid not null references public.facilities(id) on delete cascade,
   capacity_kg numeric(10,2) not null check (capacity_kg > 0),
   reserved_kg numeric(10,2) not null default 0,
@@ -75,7 +75,7 @@ create table if not exists public.capacity_slots (
 );
 
 create table if not exists public.reservations (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   harvest_id uuid not null references public.harvests(id) on delete cascade,
   facility_id uuid not null references public.facilities(id) on delete cascade,
   quantity_kg numeric(10,2) not null check (quantity_kg > 0),
@@ -84,7 +84,7 @@ create table if not exists public.reservations (
 );
 
 create table if not exists public.transport_jobs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   harvest_id uuid not null references public.harvests(id) on delete cascade,
   provider_id uuid references public.profiles(id),
   status text not null check (status in ('scheduled', 'in_transit', 'delivered', 'cancelled')) default 'scheduled',
@@ -94,7 +94,7 @@ create table if not exists public.transport_jobs (
 );
 
 create table if not exists public.buyers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   profile_id uuid not null unique references public.profiles(id) on delete cascade,
   company_name text not null,
   location text not null,
@@ -102,7 +102,7 @@ create table if not exists public.buyers (
 );
 
 create table if not exists public.offers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   harvest_id uuid not null references public.harvests(id) on delete cascade,
   buyer_id uuid not null references public.buyers(id) on delete cascade,
   price_per_kg numeric(10,2) not null check (price_per_kg >= 0),
@@ -112,7 +112,7 @@ create table if not exists public.offers (
 );
 
 create table if not exists public.inventory_batches (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   harvest_id uuid not null references public.harvests(id) on delete cascade,
   actual_received_kg numeric(10,2) not null default 0 check (actual_received_kg >= 0),
   received_at timestamptz not null default now(),
@@ -120,7 +120,7 @@ create table if not exists public.inventory_batches (
 );
 
 create table if not exists public.transactions (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   harvest_id uuid not null references public.harvests(id) on delete cascade,
   buyer_id uuid not null references public.buyers(id) on delete cascade,
   offer_id uuid references public.offers(id),
@@ -131,7 +131,7 @@ create table if not exists public.transactions (
 );
 
 create table if not exists public.payment_records (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   transaction_id uuid not null references public.transactions(id) on delete cascade,
   amount numeric(10,2) not null check (amount >= 0),
   status text not null check (status in ('pending', 'paid', 'failed', 'reversed')) default 'pending',
@@ -139,7 +139,7 @@ create table if not exists public.payment_records (
 );
 
 create table if not exists public.activity_events (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   harvest_id uuid references public.harvests(id) on delete cascade,
   actor_id uuid references public.profiles(id),
   event_type text not null,

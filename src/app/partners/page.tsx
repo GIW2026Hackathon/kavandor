@@ -1,16 +1,18 @@
 import Link from 'next/link';
 import { ArrowRight, BellRing, Boxes, PackageOpen, Thermometer } from 'lucide-react';
-import { AppShell, DemoNotice } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/app-shell';
 import { PageHeader } from '@/components/ui/page-header';
 
 const requestRows = [
-  { code: 'STORAGE-DEMO-001', crop: 'Tomatoes · 220 kg', farmer: 'James Nyakundi', arrival: '27 Oct · 08:00', status: 'Review required' },
-  { code: 'STORAGE-DEMO-002', crop: 'Avocados · 80 kg', farmer: 'Wanjiku M.' , arrival: '28 Oct · 10:30', status: 'Capacity check' },
+  { code: 'RES-2026-001', crop: 'Tomatoes · 220 kg', farmer: 'James Nyakundi', arrival: '27 Oct · 08:00', status: 'Review required' },
+  { code: 'RES-2026-002', crop: 'Avocados · 80 kg', farmer: 'Wanjiku M.' , arrival: '28 Oct · 10:30', status: 'Capacity check' },
 ];
+
+export const instant = false;
 
 export default function PartnersPage() {
   return (
-    <AppShell role="facility_operator">
+    <AppShell>
       <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 lg:px-8">
         <PageHeader eyebrow="Facility operations" title="Kisii Cold Store" description="Review incoming produce, manage occupied capacity and monitor storage conditions." />
 
@@ -40,7 +42,7 @@ export default function PartnersPage() {
                   <p className="mt-1 text-sm text-[#74767B]">{request.farmer}</p>
                 </div>
                 <div><p className="text-xs text-[#74767B]">Expected arrival</p><p className="mt-1 font-mono text-sm font-bold text-[#17191D]">{request.arrival}</p></div>
-                <Link href="/storage/requests/storage-request-001" className="flex h-11 items-center justify-center rounded-xl bg-[#17191D] px-4 text-sm font-bold text-white">Review request</Link>
+                <Link href="/storage/requests/RES-2026-001" className="flex h-11 items-center justify-center rounded-xl bg-[#17191D] px-4 text-sm font-bold text-white">Review request</Link>
               </div>
             ))}
           </div>
@@ -56,7 +58,6 @@ export default function PartnersPage() {
             <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#FF5A1F]">Manage inventory <ArrowRight size={16} /></span>
           </Link>
         </div>
-        <div className="mt-6"><DemoNotice>Facility operations are demonstration records. No live reservation or condition data is connected.</DemoNotice></div>
       </div>
     </AppShell>
   );

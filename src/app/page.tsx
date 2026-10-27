@@ -37,7 +37,7 @@ export default function HomePage() {
             {/* Right: Actions */}
             <div className="flex items-center gap-3">
               <Link
-                href="/dashboard"
+                href="/auth/signin"
                 className="rounded-xl border border-white/30 bg-black/25 px-4 py-2 text-sm font-bold text-white shadow-md backdrop-blur-md transition hover:bg-black/45"
               >
                 Sign in

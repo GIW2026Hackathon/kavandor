@@ -2,7 +2,7 @@ import { AuthPanel } from '@/components/auth/auth-panel';
 
 export default function SignInPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#F0F9F2_0%,_#EAF6EE_30%,_#F9FBF8_100%)] px-4 py-12">
+    <main className="flex min-h-screen items-center justify-center bg-[#F6F3EC] px-4 py-8 sm:py-12">
       <AuthPanel />
     </main>
   );

@@ -10,7 +10,7 @@ export const storageRequestSchema = z.object({
   requestedStartAt: z.string().datetime(),
   expectedEndAt: z.string().datetime(),
   storageRequirements: z.string().max(1000).optional(),
-  transportPreference: z.enum(['self_arranged', 'songa_demo', 'songa_provider']),
+  transportPreference: z.enum(['self_arranged', 'songa_demo', 'songa_provider', 'kavandor_dispatch']),
 }).refine((value) => new Date(value.expectedEndAt) > new Date(value.requestedStartAt), {
   message: 'Expected storage end must be after arrival.',
 });

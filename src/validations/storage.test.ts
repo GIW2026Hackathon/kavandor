@@ -9,7 +9,7 @@ const storageRequest = {
   requestedStartAt: '2026-10-27T08:00:00Z',
   expectedEndAt: '2026-11-03T08:00:00Z',
   storageRequirements: 'Keep tomatoes ventilated.',
-  transportPreference: 'songa_demo',
+  transportPreference: 'songa_provider',
 };
 
 describe('storage request validation', () => {
@@ -31,7 +31,7 @@ describe('transport request validation', () => {
     const result = transportRequestSchema.safeParse({
       harvestId: storageRequest.harvestId,
       pickupLocation: 'Nyakundi farm',
-      destinationLocation: 'Kisii Cold Store Demo',
+      destinationLocation: 'Kisii Central Cold Store Hub',
       requestedQuantity: 220,
       quantityUnit: 'kg',
       requestedPickupAt: '2026-10-27T07:00:00Z',
@@ -43,7 +43,7 @@ describe('transport request validation', () => {
     const result = transportRequestSchema.safeParse({
       harvestId: storageRequest.harvestId,
       pickupLocation: 'Nyakundi farm',
-      destinationLocation: 'Kisii Cold Store Demo',
+      destinationLocation: 'Kisii Central Cold Store Hub',
       requestedQuantity: 220,
       quantityUnit: 'kg',
       packageCount: 0,

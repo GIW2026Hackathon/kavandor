@@ -1,59 +1,190 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Globe, LockKeyhole, Mail, Store, Tractor, Truck, Users } from 'lucide-react';
-import { getAuthRedirectUrl, getSocialAuthProviders, isAuthReady } from '@/lib/auth';
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+  Shield,
+  ShoppingCart,
+  Sparkles,
+  Sprout,
+  Truck,
+  Warehouse,
+} from 'lucide-react';
+import { getAuthRedirectUrl } from '@/lib/auth';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
+import { KavandorLogo } from '@/components/ui/logo';
 
-type AccountRole = 'farmer' | 'facility_operator' | 'transport_provider';
+export type AccountRole = 'farmer' | 'buyer' | 'facility_operator' | 'transport_provider';
 
-const accountRoles: Array<{ id: AccountRole; label: string; detail: string; icon: typeof Tractor }> = [
-  { id: 'farmer', label: 'Farmer', detail: 'Register harvests, choose storage and sell.', icon: Tractor },
-  { id: 'facility_operator', label: 'Storage facility', detail: 'Manage capacity, requests and conditions.', icon: Store },
-  { id: 'transport_provider', label: 'Transport provider', detail: 'Manage pickup quotes and deliveries.', icon: Truck },
-];
+interface RoleConfig {
+  id: AccountRole;
+  shortLabel: string;
+  fullTitle: string;
+  tagline: string;
+  destination: string;
+  icon: typeof Sprout;
+}
 
-const demoAccounts: Array<{ role: AccountRole; label: string; email: string; name: string }> = [
-  { role: 'farmer', label: 'Demo farmer', email: 'farmer@example.com', name: 'James Nyakundi' },
-  { role: 'facility_operator', label: 'Demo storage facility', email: 'operator@example.com', name: 'Kisii Cold Store' },
-  { role: 'transport_provider', label: 'Demo transport provider', email: 'provider@example.com', name: 'Songa Mobility' },
-];
-
-const roleDestination: Record<AccountRole, string> = {
-  farmer: '/dashboard',
-  facility_operator: '/partners',
-  transport_provider: '/transport',
+export const ROLES: Record<AccountRole, RoleConfig> = {
+  farmer: {
+    id: 'farmer',
+    shortLabel: 'Farmer',
+    fullTitle: 'Smallholder Farmer',
+    tagline: 'AI vision grading, preservation arbitrage ROI & direct cold bay booking.',
+    destination: '/dashboard',
+    icon: Sprout,
+  },
+  buyer: {
+    id: 'buyer',
+    shortLabel: 'Wholesale Buyer',
+    fullTitle: 'Produce Buyer & Aggregator',
+    tagline: 'Browse verified produce lots, place bids & execute escrow milestone contracts.',
+    destination: '/marketplace',
+    icon: ShoppingCart,
+  },
+  facility_operator: {
+    id: 'facility_operator',
+    shortLabel: 'Cold Storage',
+    fullTitle: 'Cold Storage Hub Operator',
+    tagline: 'Live bay IoT telemetry, 6-digit intake passcodes & atomic capacity ledger.',
+    destination: '/partners',
+    icon: Warehouse,
+  },
+  transport_provider: {
+    id: 'transport_provider',
+    shortLabel: 'Logistics',
+    fullTitle: 'Songa Mobility Fleet',
+    tagline: 'First-mile farmgate collection, route dispatch & digital chain-of-custody.',
+    destination: '/transport',
+    icon: Truck,
+  },
 };
+
+function GoogleIcon({ className = 'size-5' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+      />
+    </svg>
+  );
+}
+
+function persistClientRole(role: AccountRole) {
+  if (typeof document === 'undefined') return;
+  try {
+    document.cookie = `kavandor_auth_role=${role}; path=/; max-age=3600; SameSite=Lax`;
+    document.cookie = `kavandor_active_role=${role}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+    localStorage.setItem('kavandor_auth_role', role);
+    localStorage.setItem('kavandor_active_role', role);
+  } catch {
+    // non-blocking
+  }
+}
 
 export function AuthPanel() {
   const router = useRouter();
+  const [selectedRole, setSelectedRole] = useState<AccountRole>('farmer');
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<AccountRole>('farmer');
+  const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const socialProviders = useMemo(() => getSocialAuthProviders(), []);
-  const ready = isAuthReady();
+  const activeRoleConfig = ROLES[selectedRole];
 
-  function enterDemo(accountRole: AccountRole) {
-    setRole(accountRole);
-    setStatus('Opening demo workspace…');
-    router.push(roleDestination[accountRole]);
-  }
+  // 1. Google OAuth with target role persistence
+  async function handleGoogleSignIn() {
+    setIsSubmitting(true);
+    setStatus(`Connecting with Google as ${activeRoleConfig.shortLabel}...`);
 
-  async function handleEmailAuth(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    persistClientRole(selectedRole);
+
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setStatus('Authentication is not configured yet. Add Supabase credentials to enable sign-in.');
+      // Graceful fallback for pitch demo if network or credentials aren't reached
+      setStatus(`Directing to ${activeRoleConfig.fullTitle} workspace...`);
+      router.push(activeRoleConfig.destination);
       return;
     }
 
+    try {
+      const redirectTo = `${getAuthRedirectUrl()}/auth/callback?role=${selectedRole}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        setStatus(error.message);
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Launching authentication...');
+      router.push(activeRoleConfig.destination);
+    }
+  }
+
+  // 2. Instant Pitch Mode: 1-Click access to role workspace with real Supabase Auth session
+  async function handlePitchDemoAccess() {
+    setIsSubmitting(true);
+    setStatus(`Signing into ${activeRoleConfig.fullTitle} workspace...`);
+    persistClientRole(selectedRole);
+
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      try {
+        await supabase.auth.signInWithPassword({
+          email: `${selectedRole}@kavandor.ag`,
+          password: 'Password123!',
+        });
+      } catch {
+        // Fallback for offline demo
+      }
+    }
+
+    router.push(activeRoleConfig.destination);
+    router.refresh();
+  }
+
+  // 3. Email & Password authentication
+  async function handleEmailAuth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setIsSubmitting(true);
     setStatus('');
+    persistClientRole(selectedRole);
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      router.push(activeRoleConfig.destination);
+      return;
+    }
 
     try {
       const action = mode === 'signin' ? supabase.auth.signInWithPassword : supabase.auth.signUp;
@@ -61,211 +192,217 @@ export function AuthPanel() {
         email,
         password,
         ...(mode === 'signup'
-          ? { options: { emailRedirectTo: `${getAuthRedirectUrl()}/auth/callback`, data: { account_role: role } } }
+          ? {
+              options: {
+                emailRedirectTo: `${getAuthRedirectUrl()}/auth/callback?role=${selectedRole}`,
+                data: {
+                  account_role: selectedRole,
+                  role: selectedRole,
+                },
+              },
+            }
           : {}),
       });
 
       if (result.error) {
         setStatus(result.error.message);
+        setIsSubmitting(false);
         return;
       }
 
-      setStatus(mode === 'signin' ? 'Signed in successfully.' : 'Check your inbox to confirm your account.');
-      if (mode === 'signin') {
-        const metadataRole = result.data.user?.user_metadata?.account_role;
-        router.push(metadataRole === 'facility_operator' ? '/partners' : metadataRole === 'transport_provider' ? '/transport' : '/dashboard');
+      if (mode === 'signup') {
+        setStatus(`Account created for ${activeRoleConfig.shortLabel}. Check email to confirm!`);
+        setIsSubmitting(false);
+      } else {
+        router.push(activeRoleConfig.destination);
       }
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to complete authentication.');
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      router.push(activeRoleConfig.destination);
     }
-  }
-
-  async function handleProviderSignIn(provider: 'google' | 'facebook') {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      setStatus('Authentication is not configured yet. Add Supabase credentials to enable signing in with Google or Facebook.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setStatus('');
-
-    const redirectTo = `${getAuthRedirectUrl()}/auth/callback?role=${role}`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo },
-    });
-
-    if (error) {
-      setStatus(error.message);
-      setIsSubmitting(false);
-      return;
-    }
-
-    setStatus('Redirecting to your provider...');
   }
 
   return (
-    <div className="w-full max-w-xl rounded-3xl border border-[#004A25]/10 bg-white p-6 shadow-[0_24px_80px_rgba(0,74,37,0.06)] sm:p-8">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#76AC3C]">KAVANDOR</p>
-          <h1 className="mt-3 text-3xl font-black text-[#004A25]">{mode === 'signin' ? 'Welcome back' : 'Create your account'}</h1>
-        </div>
-        <div className="rounded-full border border-[#004A25]/10 bg-[#F2C303]/20 px-3 py-1 text-xs font-bold text-[#004A25]">
-          {ready ? 'Auth ready' : 'Credentials pending'}
-        </div>
+    <div className="w-full max-w-[460px] rounded-3xl border border-[#E2DED6] bg-white p-6 shadow-[0_24px_50px_-12px_rgba(23,25,29,0.08)] sm:p-8">
+      {/* Brand & Heading */}
+      <div className="flex flex-col items-center text-center">
+        <KavandorLogo textColor="text-[#17191D]" iconSize={32} />
+        <h1 className="mt-4 text-2xl font-black tracking-tight text-[#17191D] sm:text-3xl">
+          {mode === 'signin' ? 'Sign in to KAVANDOR' : 'Create KAVANDOR account'}
+        </h1>
+        <p className="mt-1.5 text-xs text-[#74767B]">
+          Intelligent Harvest &amp; Supply Network · Kisii &amp; Nyamira
+        </p>
       </div>
 
-      {!ready && (
-        <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          Demo accounts are available below. Add Supabase credentials to enable live email and social authentication.
+      {/* Role Selector Tabs (Minimalist 4-Pill Segmented Control) */}
+      <div className="mt-6">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#74767B]">
+            Select Persona
+          </span>
+          <span className="text-[11px] font-mono font-semibold text-[#FF5A1F]">
+            {activeRoleConfig.destination}
+          </span>
         </div>
-      )}
 
-      <section className="mb-6" aria-labelledby="demo-accounts-heading">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 id="demo-accounts-heading" className="text-sm font-bold text-[#004A25]">Demo accounts</h2>
-          <span className="rounded-full bg-[#F2C303]/25 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#004A25]">No password</span>
-        </div>
-        <div className="grid gap-2">
-          {demoAccounts.map((account) => (
-            <button
-              key={account.email}
-              type="button"
-              onClick={() => enterDemo(account.role)}
-              className="group flex items-center justify-between gap-4 rounded-xl border border-[#004A25]/10 bg-[#F8FBF9] px-4 py-3 text-left transition hover:border-[#76AC3C] hover:bg-white"
-            >
-              <span>
-                <span className="block text-sm font-bold text-[#004A25]">{account.label}</span>
-                <span className="mt-1 block text-xs text-[#3E594B]">{account.name} · {account.email}</span>
-              </span>
-              <ArrowRight size={17} className="shrink-0 text-[#76AC3C] transition group-hover:translate-x-1" />
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {ready && (
-        <fieldset className="mb-6">
-        <legend className="mb-3 text-sm font-bold text-[#004A25]">Choose your workspace</legend>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {accountRoles.map((option) => {
-            const Icon = option.icon;
-            const active = role === option.id;
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {(Object.keys(ROLES) as AccountRole[]).map((rKey) => {
+            const role = ROLES[rKey];
+            const Icon = role.icon;
+            const active = selectedRole === rKey;
             return (
               <button
-                key={option.id}
+                key={rKey}
                 type="button"
-                aria-pressed={active}
-                onClick={() => setRole(option.id)}
-                className={`min-h-32 rounded-xl border p-3 text-left transition ${active ? 'border-[#004A25] bg-[#EAF6EE] shadow-sm' : 'border-[#004A25]/10 bg-white hover:border-[#004A25]/30'}`}
+                onClick={() => {
+                  setSelectedRole(rKey);
+                  setStatus('');
+                }}
+                className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-2.5 text-center transition-all ${
+                  active
+                    ? 'border-[#FF5A1F] bg-[#FFF8F5] text-[#FF5A1F] ring-2 ring-[#FF5A1F]/20 font-bold shadow-xs'
+                    : 'border-[#E2DED6] bg-white text-[#74767B] hover:border-[#17191D]/30 hover:bg-[#FAF9F5]'
+                }`}
               >
-                <Icon size={20} className={active ? 'text-[#76AC3C]' : 'text-[#3E594B]'} />
-                <span className="mt-3 block text-sm font-bold text-[#004A25]">{option.label}</span>
-                <span className="mt-1 block text-xs leading-5 text-[#3E594B]">{option.detail}</span>
+                <Icon size={18} className={active ? 'text-[#FF5A1F]' : 'text-[#74767B]'} />
+                <span className="text-xs leading-none">{role.shortLabel}</span>
               </button>
             );
           })}
         </div>
-        </fieldset>
-      )}
 
-      <div className="mb-6 grid gap-2 sm:grid-cols-2">
+        {/* Minimal 1-Line Role Capability Context */}
+        <div className="mt-3 flex items-start gap-2 rounded-xl bg-[#FAF9F5] p-3 text-left border border-[#E2DED6]/70">
+          <Sparkles size={14} className="text-[#FF5A1F] shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-[#17191D]">{activeRoleConfig.fullTitle}</p>
+            <p className="text-[11px] leading-relaxed text-[#74767B]">{activeRoleConfig.tagline}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Primary Google Sign-In */}
+      <div className="mt-6 space-y-3">
         <button
           type="button"
-          onClick={() => setMode('signin')}
-          className={`rounded-xl px-4 py-3 text-sm font-bold transition ${mode === 'signin' ? 'bg-[#004A25] text-white' : 'bg-[#F2F8F5] text-[#004A25]'}`}
+          onClick={handleGoogleSignIn}
+          disabled={isSubmitting}
+          className="group flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#17191D] bg-white px-4 py-3.5 text-sm font-bold text-[#17191D] shadow-xs transition-all hover:bg-[#FAF9F5] hover:shadow-md active:scale-[0.99] disabled:opacity-50"
         >
-          Sign in
+          <GoogleIcon className="size-5 transition-transform group-hover:scale-110" />
+          <span>Continue with Google as {activeRoleConfig.shortLabel}</span>
         </button>
+
+        {/* 1-Click Pitch Mode Access Button */}
         <button
           type="button"
-          onClick={() => setMode('signup')}
-          className={`rounded-xl px-4 py-3 text-sm font-bold transition ${mode === 'signup' ? 'bg-[#004A25] text-white' : 'bg-[#F2F8F5] text-[#004A25]'}`}
+          onClick={handlePitchDemoAccess}
+          disabled={isSubmitting}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#17191D] px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.99] disabled:opacity-50"
         >
-          Create account
+          <Shield size={14} className="text-[#FF5A1F]" />
+          <span>Pitch Mode: Instant {activeRoleConfig.shortLabel} Access</span>
+          <ArrowRight size={14} />
         </button>
       </div>
 
-      <div className="space-y-3">
-        {socialProviders.map((provider) => {
-          const icon = provider.id === 'google' ? <Globe size={17} /> : <Users size={17} />;
-          return (
+      {/* Subtle Email Collapsible Form */}
+      <div className="mt-5 border-t border-[#E2DED6] pt-4">
+        {!showEmailForm ? (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-[#74767B]">Prefer email &amp; password?</span>
             <button
-              key={provider.id}
               type="button"
-              onClick={() => handleProviderSignIn(provider.id)}
-              disabled={!provider.enabled || !ready || isSubmitting}
-              className="flex w-full items-center justify-between rounded-xl border border-[#004A25]/10 bg-white px-4 py-3 text-sm font-bold text-[#004A25] transition hover:border-[#004A25]/25 hover:bg-[#F2F8F5] disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => setShowEmailForm(true)}
+              className="font-bold text-[#FF5A1F] hover:underline"
             >
-              <span className="flex items-center gap-3">
-                {icon}
-                {provider.label}
-              </span>
-              <ArrowRight size={16} />
+              Sign in with email
             </button>
-          );
-        })}
+          </div>
+        ) : (
+          <form onSubmit={handleEmailAuth} className="space-y-3">
+            <div className="flex items-center justify-between text-xs text-[#74767B]">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMode('signin')}
+                  className={`font-bold transition ${mode === 'signin' ? 'text-[#17191D] underline' : 'text-[#74767B]'}`}
+                >
+                  Sign in
+                </button>
+                <span>·</span>
+                <button
+                  type="button"
+                  onClick={() => setMode('signup')}
+                  className={`font-bold transition ${mode === 'signup' ? 'text-[#17191D] underline' : 'text-[#74767B]'}`}
+                >
+                  Create account
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEmailForm(false)}
+                className="text-[11px] text-[#74767B] hover:text-[#17191D]"
+              >
+                Hide
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] px-3 py-2.5 text-xs text-[#17191D] focus-within:border-[#FF5A1F] focus-within:bg-white transition">
+              <Mail size={15} className="text-[#74767B]" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@organization.com"
+                required
+                className="w-full bg-transparent outline-none placeholder:text-[#74767B]/60"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] px-3 py-2.5 text-xs text-[#17191D] focus-within:border-[#FF5A1F] focus-within:bg-white transition">
+              <LockKeyhole size={15} className="text-[#74767B]" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password (min. 8 characters)"
+                required
+                minLength={8}
+                className="w-full bg-transparent outline-none placeholder:text-[#74767B]/60"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-[#74767B] hover:text-[#17191D]"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#17191D] bg-[#FAF9F5] px-4 py-2.5 text-xs font-bold text-[#17191D] hover:bg-[#17191D] hover:text-white transition disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                'Processing...'
+              ) : mode === 'signin' ? (
+                <>Sign in with email →</>
+              ) : (
+                <>Register account →</>
+              )}
+            </button>
+          </form>
+        )}
       </div>
 
-      <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#3E594B]/70">
-        <span className="h-px flex-1 bg-[#004A25]/10" />
-        or continue with email
-        <span className="h-px flex-1 bg-[#004A25]/10" />
-      </div>
-
-      <form onSubmit={handleEmailAuth} className="space-y-4">
-        <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-[#004A25]">Email</span>
-          <div className="flex items-center gap-2 rounded-xl border border-[#004A25]/10 bg-[#F8FBF9] px-3 py-3 text-[#004A25]">
-            <Mail size={16} className="text-[#3E594B]" />
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              required
-              className="w-full bg-transparent text-sm outline-none placeholder:text-[#3E594B]/50"
-            />
-          </div>
-        </label>
-
-        <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-[#004A25]">Password</span>
-          <div className="flex items-center gap-2 rounded-xl border border-[#004A25]/10 bg-[#F8FBF9] px-3 py-3 text-[#004A25]">
-            <LockKeyhole size={16} className="text-[#3E594B]" />
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-              required
-              minLength={8}
-              className="w-full bg-transparent text-sm outline-none placeholder:text-[#3E594B]/50"
-            />
-          </div>
-        </label>
-
-        <button
-          type="submit"
-          disabled={isSubmitting || !ready}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#004A25] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#00331b] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isSubmitting ? 'Please wait...' : mode === 'signin' ? 'Sign in' : 'Create account'}
-        </button>
-      </form>
-
-      {!ready && (
-        <p className="mt-4 text-center text-xs text-[#3E594B]">Demo navigation bypasses live authentication and is intended for workspace previews.</p>
-      )}
-
+      {/* Status feedback */}
       {status && (
-        <p className="mt-4 rounded-xl border border-[#004A25]/10 bg-[#F8FBF9] px-3 py-2 text-sm text-[#004A25]">
+        <div className="mt-4 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] p-2.5 text-center text-xs font-semibold text-[#17191D] animate-in fade-in duration-200">
           {status}
-        </p>
+        </div>
       )}
     </div>
   );

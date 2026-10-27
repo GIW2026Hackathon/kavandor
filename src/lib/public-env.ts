@@ -1,12 +1,15 @@
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const DEFAULT_SUPABASE_URL = 'https://xhruzolsnfuqiytexcqp.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocnV6b2xzbmZ1cWl5dGV4Y3FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNDgxMzIsImV4cCI6MjEwODYyNDEzMn0.RIqkCUatx2PtLEU-mk0d7HGmmw37BZV18cfW3WyG0jI';
 
 export const publicEnv = {
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-  NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
   NEXT_PUBLIC_FACEBOOK_APP_ID: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
 };
 
-export const hasPublicSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey);
+export const hasPublicSupabaseConfig = Boolean(
+  publicEnv.NEXT_PUBLIC_SUPABASE_URL && publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);

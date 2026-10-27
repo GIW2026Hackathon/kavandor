@@ -15,9 +15,9 @@ export function getSocialAuthProviders(): SocialAuthProviderConfig[] {
     {
       id: 'google',
       label: 'Google',
-      description: 'Continue with a Google account.',
-      enabled: Boolean(publicEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID),
-      envVar: 'NEXT_PUBLIC_GOOGLE_CLIENT_ID',
+      description: 'Continue with your Google account.',
+      enabled: hasPublicSupabaseConfig,
+      envVar: 'NEXT_PUBLIC_SUPABASE_URL',
     },
     {
       id: 'facebook',
@@ -30,7 +30,10 @@ export function getSocialAuthProviders(): SocialAuthProviderConfig[] {
 }
 
 export function getAuthRedirectUrl() {
-  return publicEnv.NEXT_PUBLIC_SITE_URL;
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return publicEnv.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 }
 
 export function isAuthReady() {

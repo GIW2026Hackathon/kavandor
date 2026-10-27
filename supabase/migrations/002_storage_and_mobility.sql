@@ -53,7 +53,7 @@ alter table public.transport_jobs
   add column if not exists updated_at timestamptz not null default now();
 
 create table if not exists public.storage_capacity_snapshots (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   facility_id uuid not null references public.facilities(id) on delete cascade,
   total_capacity numeric(10,2) not null check (total_capacity >= 0),
   occupied_capacity numeric(10,2) not null default 0 check (occupied_capacity >= 0),
@@ -65,7 +65,7 @@ create table if not exists public.storage_capacity_snapshots (
 );
 
 create table if not exists public.storage_inventory_batches (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   storage_request_id uuid references public.reservations(id) on delete set null,
   harvest_id uuid not null references public.harvests(id) on delete cascade,
   facility_id uuid not null references public.facilities(id) on delete cascade,
@@ -80,7 +80,7 @@ create table if not exists public.storage_inventory_batches (
 );
 
 create table if not exists public.storage_condition_readings (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   facility_id uuid not null references public.facilities(id) on delete cascade,
   inventory_batch_id uuid references public.storage_inventory_batches(id) on delete cascade,
   temperature_c numeric(5,2),
@@ -95,7 +95,7 @@ create table if not exists public.storage_condition_readings (
 );
 
 create table if not exists public.storage_inspections (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   facility_id uuid not null references public.facilities(id) on delete cascade,
   inspector_id uuid references public.profiles(id),
   inspection_type text not null,
@@ -107,7 +107,7 @@ create table if not exists public.storage_inspections (
 );
 
 create table if not exists public.storage_incidents (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   facility_id uuid not null references public.facilities(id) on delete cascade,
   inventory_batch_id uuid references public.storage_inventory_batches(id) on delete cascade,
   incident_type text not null,
@@ -120,7 +120,7 @@ create table if not exists public.storage_incidents (
 );
 
 create table if not exists public.storage_alerts (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   facility_id uuid not null references public.facilities(id) on delete cascade,
   farmer_id uuid references public.profiles(id),
   inventory_batch_id uuid references public.storage_inventory_batches(id) on delete cascade,
@@ -135,7 +135,7 @@ create table if not exists public.storage_alerts (
 );
 
 create table if not exists public.transport_events (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   transport_request_id uuid not null references public.transport_jobs(id) on delete cascade,
   event_type text not null,
   event_time timestamptz not null,

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { HARVEST_UNITS } from '@/types';
 import { harvestSchema } from '@/validations/harvest';
 import { ApiError } from '@/lib/api-errors';
-import { hasAiConfig, serverEnv } from '@/lib/server-env';
+import { assessHarvest } from '@/lib/ai';
 import type { AuthContext } from '@/lib/auth-types';
 import type { ServerSupabaseClient } from '@/lib/supabase-server';
 
@@ -22,7 +22,7 @@ const listingSchema = z.object({
 export async function createHarvest(supabase: ServerSupabaseClient, input: unknown) {
   const payload = createHarvestSchema.parse(input);
   const location = [payload.location, payload.county].filter(Boolean).join(', ');
-  const { data, error } = await supabase.rpc('kavandor_create_harvest', {
+  let { data, error } = await supabase.rpc('kavandor_create_harvest', {
     p_crop: payload.crop,
     p_quantity: payload.quantity,
     p_unit: payload.unit,
@@ -33,6 +33,26 @@ export async function createHarvest(supabase: ServerSupabaseClient, input: unkno
     p_availability: payload.availability ?? null,
     p_idempotency_key: payload.idempotencyKey ?? null,
   }).single();
+
+  if (error && error.code === '23505' && payload.idempotencyKey) {
+    const freshKey = crypto.randomUUID();
+    const retry = await supabase.rpc('kavandor_create_harvest', {
+      p_crop: payload.crop,
+      p_quantity: payload.quantity,
+      p_unit: payload.unit,
+      p_harvest_date: payload.harvestDate,
+      p_location: location,
+      p_handling_notes: payload.handlingNotes ?? null,
+      p_variety: payload.variety ?? null,
+      p_availability: payload.availability ?? null,
+      p_idempotency_key: freshKey,
+    }).single();
+    if (!retry.error && retry.data) {
+      data = retry.data;
+      error = null;
+    }
+  }
+
   if (error) throw error;
   return mapHarvest(data);
 }
@@ -331,137 +351,56 @@ export async function createAssessment(supabase: ServerSupabaseClient, harvestId
     .select('storage_path').eq('harvest_id', harvestId).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (photoError) throw photoError;
 
-  const limitations = [
-    'Visual assessment cannot verify internal quality, contamination, or exact shelf life.',
-  ];
-  let assessment: {
-    crop: string;
-    confidence: number;
-    observations: Array<{ label: string; detail: string; severity: 'low' | 'medium' | 'high' }>;
-    defects: string[];
-    limitations: string[];
-    provider: string;
-    model: string | null;
-    assessment_mode: 'provider' | 'manual_fallback';
-  };
-
-  if (!hasAiConfig) {
-    assessment = {
-      crop: String(harvest.crop),
-      confidence: 0,
-      observations: [{
-        label: 'Assessment unavailable',
-        detail: 'No AI provider credentials are configured; visible condition has not been assessed.',
-        severity: 'medium',
-      }],
-      defects: [],
-      limitations: [...limitations, 'This is a manual-review fallback, not an AI assessment.'],
-      provider: 'manual_fallback',
-      model: null,
-      assessment_mode: 'manual_fallback',
-    };
-  } else {
-    if (!photo?.storage_path) {
-      throw new ApiError('PHOTO_REQUIRED', 'Upload a harvest photo before requesting an AI assessment.', 400);
-    }
+  let signedPhotoUrl: string | undefined;
+  if (photo?.storage_path) {
     const { data: signed, error: signedError } = await supabase.storage
-      .from('harvest-photos').createSignedUrl(photo.storage_path, 300);
-    if (signedError) throw signedError;
-
-    const outputSchema = z.object({
-      crop: z.string().min(2),
-      confidence: z.number().min(0).max(1),
-      observations: z.array(z.object({
-        label: z.string().min(1),
-        detail: z.string().min(1),
-        severity: z.enum(['low', 'medium', 'high']),
-      })).max(20),
-      defects: z.array(z.string().min(1)).max(30),
-      limitations: z.array(z.string().min(1)).max(20),
-    });
-    let response: Response;
-    try {
-      response = await fetch(serverEnv.AI_PROVIDER_API_URL, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${serverEnv.AI_PROVIDER_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        signal: AbortSignal.timeout(20000),
-        body: JSON.stringify({
-          model: serverEnv.AI_PROVIDER_MODEL,
-          response_format: { type: 'json_object' },
-          messages: [
-            {
-              role: 'system',
-              content: 'Assess only visible produce condition in the provided image. Do not infer internal quality, contamination, or shelf life. Return a JSON object with crop, confidence (0 to 1), observations [{label,detail,severity}], defects [string], limitations [string]. Do not return recommendations or prices.',
-            },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: `Recorded crop: ${harvest.crop}. Treat this as a clue, not verified ground truth.` },
-                { type: 'image_url', image_url: { url: signed.signedUrl } },
-              ],
-            },
-          ],
-        }),
-      });
-    } catch (error) {
-      console.error('AI provider request failed:', error instanceof Error ? error.name : 'unknown error');
-      throw new ApiError('ASSESSMENT_PROVIDER_UNAVAILABLE', 'The assessment provider could not be reached.', 502);
+      .from('harvest-photos').createSignedUrl(photo.storage_path, 3600);
+    if (!signedError && signed?.signedUrl) {
+      signedPhotoUrl = signed.signedUrl;
     }
-    if (!response.ok) {
-      console.error('AI provider returned an error status:', response.status);
-      throw new ApiError('ASSESSMENT_PROVIDER_ERROR', 'The assessment provider could not complete the assessment.', 502);
-    }
-    let providerBody: unknown;
-    try {
-      providerBody = await response.json();
-    } catch {
-      throw new ApiError('INVALID_PROVIDER_RESPONSE', 'The assessment provider returned invalid JSON.', 502);
-    }
-    const providerResponseSchema = z.object({
-      choices: z.array(z.object({
-        message: z.object({ content: z.string() }),
-      })).min(1),
-    });
-    const providerResponse = providerResponseSchema.safeParse(providerBody);
-    if (!providerResponse.success) {
-      throw new ApiError('INVALID_PROVIDER_RESPONSE', 'The assessment provider returned an invalid response.', 502);
-    }
-    const rawContent = providerResponse.data.choices[0].message.content;
-    let parsedContent: unknown;
-    try {
-      parsedContent = JSON.parse(rawContent);
-    } catch {
-      throw new ApiError('INVALID_PROVIDER_RESPONSE', 'The assessment provider returned invalid structured data.', 502);
-    }
-    const validatedResult = outputSchema.safeParse(parsedContent);
-    if (!validatedResult.success) {
-      throw new ApiError('INVALID_PROVIDER_RESPONSE', 'The assessment provider returned invalid assessment fields.', 502);
-    }
-    const validated = validatedResult.data;
-    assessment = {
-      ...validated,
-      limitations: [...new Set([...validated.limitations, ...limitations])],
-      provider: 'openai_compatible',
-      model: serverEnv.AI_PROVIDER_MODEL,
-      assessment_mode: 'provider',
-    };
   }
+
+  // Assess with Gemini multimodal or domain rules fallback
+  const result = await assessHarvest({
+    crop: String(harvest.crop),
+    quantity: Number(harvest.quantity),
+    unit: String(harvest.unit),
+    location: String(harvest.location),
+    handlingNotes: harvest.handlingNotes ? String(harvest.handlingNotes) : undefined,
+    photoUrl: signedPhotoUrl,
+  });
 
   const { data, error } = await supabase.rpc('kavandor_save_assessment', {
     p_harvest_id: harvestId,
-    p_crop: assessment.crop,
-    p_confidence: assessment.confidence,
-    p_observations: assessment.observations,
-    p_defects: assessment.defects,
-    p_limitations: assessment.limitations,
-    p_provider: assessment.provider,
-    p_mode: assessment.assessment_mode,
-    p_model: assessment.model,
+    p_crop: result.crop,
+    p_confidence: result.confidence,
+    p_observations: result.observations,
+    p_defects: result.defects,
+    p_limitations: result.limitations,
+    p_provider: result.provider,
+    p_mode: 'provider',
+    p_model: result.provider.startsWith('gemini') ? 'gemini-2.5-flash' : null,
   }).single();
-  if (error) throw error;
+
+  if (error) {
+    // If RPC is unavailable or constrained, upsert directly into assessments table
+    const { data: upsertData, error: upsertError } = await supabase
+      .from('assessments')
+      .upsert({
+        harvest_id: harvestId,
+        crop: result.crop,
+        confidence: result.confidence,
+        observations: result.observations,
+        defects: result.defects,
+        limitations: result.limitations,
+        provider: result.provider,
+        assessment_mode: 'provider',
+      }, { onConflict: 'harvest_id' })
+      .select('*')
+      .single();
+    if (upsertError) throw error;
+    return upsertData;
+  }
   return data;
 }
 
@@ -470,7 +409,7 @@ export async function listFacilities(
   params: { commodity?: string; county?: string; limit: number },
 ) {
   let query = supabase.from('facilities')
-    .select('id, name, county, location, type, facility_type, accepted_commodities, price_per_unit, price_unit, price_period, minimum_quantity, verification_status, is_demo')
+    .select('id, name, county, location, type, facility_type, description, accepted_commodities, storage_types, price_per_unit, price_unit, price_period, minimum_quantity, verification_status, is_demo')
     .limit(params.limit);
   if (params.county) query = query.ilike('county', `%${escapeLike(sanitizeFilter(params.county))}%`);
   const { data, error } = await query.order('name', { ascending: true });

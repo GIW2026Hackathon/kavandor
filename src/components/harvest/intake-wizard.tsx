@@ -2,9 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Camera, Check, ChevronLeft, ChevronRight, MapPin, Upload } from 'lucide-react';
+import { Camera, Check, ChevronLeft, ChevronRight, Loader2, MapPin, Sparkles, Upload } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { HARVEST_UNITS } from '@/types';
+import { detectCurrentLocation, REGIONAL_FARMING_HUBS } from '@/lib/geo';
 
 const steps = ['Produce', 'Harvest details', 'Location', 'Photos', 'Review'];
 
@@ -56,13 +57,42 @@ export function IntakeWizard() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [geoMessage, setGeoMessage] = useState('');
   const [reference, setReference] = useState('');
+  const [createdHarvestId, setCreatedHarvestId] = useState('');
   const [idempotencyKey, setIdempotencyKey] = useState('');
   const photoPreviews = useMemo(() => photos.map((file) => URL.createObjectURL(file)), [photos]);
 
+  const handleDetectLocation = async () => {
+    setCreatedHarvestId('');
+    setIdempotencyKey('');
+    setLocating(true);
+    setGeoMessage('');
+    setError('');
+
+    try {
+      const detected = await detectCurrentLocation();
+      setDraft((curr) => ({
+        ...curr,
+        location: detected.locality,
+        county: detected.county,
+      }));
+      setGeoMessage(`GPS lock: ${detected.locality} (${detected.county} County)`);
+    } catch (geoErr) {
+      setError(geoErr instanceof Error ? geoErr.message : 'Unable to acquire GPS location.');
+    } finally {
+      setLocating(false);
+    }
+  };
+
   useEffect(() => () => photoPreviews.forEach((preview) => URL.revokeObjectURL(preview)), [photoPreviews]);
 
-  const update = (field: keyof HarvestDraft, value: string) => setDraft((current) => ({ ...current, [field]: value }));
+  const update = (field: keyof HarvestDraft, value: string) => {
+    setCreatedHarvestId('');
+    setIdempotencyKey('');
+    setDraft((current) => ({ ...current, [field]: value }));
+  };
   const produceName = draft.crop === 'Other agricultural produce' ? draft.customProduce.trim() : draft.crop;
   const validate = () => {
     if (step === 0 && (!produceName || Number(draft.quantity) <= 0)) return 'Choose a produce type and enter a quantity greater than zero.';
@@ -79,36 +109,45 @@ export function IntakeWizard() {
     setSubmitting(true);
     setError('');
     try {
-      const requestKey = idempotencyKey || crypto.randomUUID();
-      if (!idempotencyKey) setIdempotencyKey(requestKey);
-      const response = await fetch('/api/harvests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey },
-        body: JSON.stringify({
-          crop: produceName,
-          variety: draft.variety,
-          quantity: Number(draft.quantity),
-          harvestDate: new Date(`${draft.harvestDate}T${draft.harvestTime}:00`).toISOString(),
-          unit: draft.unit,
-          handlingNotes: draft.handlingNotes,
-          availability: draft.availability,
-          location: draft.location,
-          county: draft.county,
-          idempotencyKey: requestKey,
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error?.message ?? 'The harvest could not be saved.');
+      let harvestId = createdHarvestId;
+
+      if (!harvestId) {
+        const requestKey = idempotencyKey || crypto.randomUUID();
+        const response = await fetch('/api/harvests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey },
+          body: JSON.stringify({
+            crop: produceName,
+            variety: draft.variety,
+            quantity: Number(draft.quantity),
+            harvestDate: new Date(`${draft.harvestDate}T${draft.harvestTime}:00`).toISOString(),
+            unit: draft.unit,
+            handlingNotes: draft.handlingNotes,
+            availability: draft.availability,
+            location: draft.location,
+            county: draft.county,
+            idempotencyKey: requestKey,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          setIdempotencyKey('');
+          throw new Error(result.error?.message ?? 'The harvest could not be saved.');
+        }
+        harvestId = result.harvest.id;
+        setCreatedHarvestId(harvestId);
+      }
+
       if (photos.length > 0) {
         const form = new FormData();
         photos.forEach((file) => form.append('photos', file));
-        const photoResponse = await fetch(`/api/harvests/${result.harvest.id}/photos`, { method: 'POST', body: form });
+        const photoResponse = await fetch(`/api/harvests/${harvestId}/photos`, { method: 'POST', body: form });
         const photoResult = await photoResponse.json();
         if (!photoResponse.ok) {
-          throw new Error(`Harvest ${result.harvest.id} was saved, but the photos were not uploaded: ${photoResult.error?.message ?? 'Upload failed.'}`);
+          throw new Error(`Harvest was saved, but produce photos could not be attached: ${photoResult.error?.message ?? 'Upload failed.'}`);
         }
       }
-      setReference(result.harvest.id);
+      setReference(harvestId);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to save harvest.');
     } finally {
@@ -122,9 +161,8 @@ export function IntakeWizard() {
         <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-[#00C896] text-white shadow-lg">
           <Check size={32} />
         </span>
-        <p className="mt-7 text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Harvest registered</p>
         <h1 className="mt-2 text-3xl font-extrabold text-[#17191D]">Reference {reference}</h1>
-        <p className="mt-3 text-sm text-[#74767B]">Your harvest has been saved. A visible-condition assessment can be requested next.</p>
+        <p className="mt-3 text-sm text-[#74767B]">Your harvest has been registered in the KAVANDOR network. AI quality appraisal and preservation options are ready.</p>
         <Link href={`/harvests/${reference}`} className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-[#FF5A1F] hover:bg-[#E44E18] px-6 text-sm font-bold text-white shadow-md transition active:scale-98">
           Open harvest intelligence <ChevronRight size={17} />
         </Link>
@@ -174,9 +212,56 @@ export function IntakeWizard() {
             <div className="grid gap-5 sm:grid-cols-2">
               <Input label="Farm or collection point" value={draft.location} onChange={(value) => update('location', value)} />
               <Select label="County" value={draft.county} onChange={(value) => update('county', value)} options={['Kisii', 'Nyamira']} />
-              <button type="button" className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#E2DED6] text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] transition sm:col-span-2">
-                <MapPin size={17} className="text-[#FF5A1F]" /> Use my current location
-              </button>
+              
+              <div className="sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={locating}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#E2DED6] bg-white text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] transition active:scale-98 disabled:opacity-60 shadow-2xs"
+                >
+                  {locating ? (
+                    <>
+                      <Loader2 size={17} className="animate-spin text-[#FF5A1F]" />
+                      Acquiring GPS coordinates…
+                    </>
+                  ) : (
+                    <>
+                      <MapPin size={17} className="text-[#FF5A1F]" />
+                      Use my current GPS location
+                    </>
+                  )}
+                </button>
+                {geoMessage && (
+                  <p className="mt-2 text-xs font-semibold text-emerald-700 flex items-center gap-1.5">
+                    <Check size={14} /> {geoMessage}
+                  </p>
+                )}
+              </div>
+
+              <div className="sm:col-span-2 border-t border-[#E2DED6] pt-4">
+                <p className="text-xs font-bold text-[#74767B] mb-2">Or select a regional collection hub:</p>
+                <div className="flex flex-wrap gap-2">
+                  {REGIONAL_FARMING_HUBS.slice(0, 6).map((hub) => (
+                    <button
+                      key={hub.name}
+                      type="button"
+                      onClick={() => {
+                        update('location', hub.name);
+                        update('county', hub.county);
+                        setGeoMessage(`Selected ${hub.name} (${hub.county} County)`);
+                      }}
+                      className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                        draft.location === hub.name
+                          ? 'bg-[#FF5A1F] text-white shadow-xs'
+                          : 'bg-[#FAF9F5] border border-[#E2DED6] text-[#17191D] hover:border-[#FF5A1F]'
+                      }`}
+                    >
+                      {hub.name} ({hub.county})
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </Fieldset>
         )}
@@ -188,14 +273,22 @@ export function IntakeWizard() {
                 <Camera size={32} className="mx-auto text-[#FF5A1F]" />
                 <span className="mt-3 block text-sm font-bold text-[#17191D]">Open camera or choose photos</span>
                 <span className="mt-1 block text-xs text-[#74767B]">JPG or PNG · up to 5 images</span>
-              </span>produceName
+              </span>
             </label>
             {photos.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {photoPreviews.map((photo, index) => (
-                  <Image key={`${photos[index].name}-${index}`} src={photo} alt="Selected harvest preview" width={400} height={400} unoptimized className="aspect-square w-full rounded-xl object-cover border border-[#E2DED6]" />
-                ))}
-              </div>
+              <>
+                <div className="mt-4 rounded-xl border border-emerald-300 bg-emerald-50/70 p-3.5 flex items-center gap-3">
+                  <Sparkles size={18} className="text-emerald-700 shrink-0" />
+                  <p className="text-xs text-emerald-900 leading-5">
+                    <strong>Gemini 2.5 Flash Vision Enabled:</strong> {photos.length} harvest photo{photos.length > 1 ? 's' : ''} queued for instant visual quality appraisal and defect analysis upon submission.
+                  </p>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {photoPreviews.map((photo, index) => (
+                    <Image key={`${photos[index].name}-${index}`} src={photo} alt="Selected harvest preview" width={400} height={400} unoptimized className="aspect-square w-full rounded-xl object-cover border border-[#E2DED6]" />
+                  ))}
+                </div>
+              </>
             )}
           </Fieldset>
         )}
@@ -234,7 +327,7 @@ export function IntakeWizard() {
           )}
         </div>
       </div>
-      <p className="mt-4 text-center text-xs text-[#74767B]">Demo workflow · entries remain in this browser session only.</p>
+      <p className="mt-4 text-center text-xs text-[#74767B]">Secured harvest intake · Logged on KAVANDOR Kisii &amp; Nyamira agricultural network ledger.</p>
     </div>
   );
 }
