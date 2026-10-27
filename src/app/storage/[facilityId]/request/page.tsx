@@ -5,9 +5,26 @@ import { findFacility } from '@/data/facilities';
 
 export const instant = false;
 
-export default async function StorageRequestPage({ params }: { params: Promise<{ facilityId: string }> }) {
+export default async function StorageRequestPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ facilityId: string }>;
+  searchParams: Promise<{ harvestId?: string; quantity?: string; crop?: string }>;
+}) {
   const { facilityId } = await params;
+  const { harvestId, quantity, crop } = await searchParams;
   const facility = findFacility(facilityId);
   if (!facility) notFound();
-  return <AppShell><StorageRequestWizard facility={facility} /></AppShell>;
+
+  return (
+    <AppShell allowedRoles={['farmer', 'operations_admin']}>
+      <StorageRequestWizard
+        facility={facility}
+        initialHarvestId={harvestId}
+        initialQuantity={quantity}
+        initialCrop={crop}
+      />
+    </AppShell>
+  );
 }

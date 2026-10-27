@@ -141,7 +141,7 @@ describe('Production Systems Verification', () => {
         const err = await promptRes.text();
         console.warn(`[AI NOTE] gemini-2.5-flash response: ${promptRes.status} ${err.slice(0, 100)}`);
       }
-    });
+    }, 25000);
   });
 
   describe('3. Supabase Authentication Features', () => {

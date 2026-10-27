@@ -7,127 +7,103 @@ import {
   Boxes,
   Check,
   ChevronDown,
+  History,
   LayoutDashboard,
   Leaf,
   LogOut,
   Menu,
+  Navigation,
   PackageOpen,
   ShieldCheck,
   ShoppingCart,
   Sprout,
   Store,
+  Thermometer,
   Truck,
+  User,
   Warehouse,
   BellRing,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { KavandorLogo } from '@/components/ui/logo';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
+import type { AuthenticatedUserProfile } from '@/lib/auth-server';
 
 export type WorkspaceRole = 'farmer' | 'buyer' | 'facility_operator' | 'transport_provider';
 
 interface RoleProfile {
-  initials: string;
-  name: string;
-  subtitle: string;
   roleLabel: string;
-  location: string;
   badge: string;
   icon: typeof Sprout;
   defaultDestination: string;
-  themeColor: string;
   themeBg: string;
 }
 
-const roleProfiles: Record<WorkspaceRole, RoleProfile> = {
+const roleMeta: Record<WorkspaceRole, RoleProfile> = {
   farmer: {
-    initials: 'JN',
-    name: 'James Nyakundi',
-    subtitle: 'Smallholder Farmer',
     roleLabel: 'Farmer Workspace',
-    location: 'Nyakundi Farm · Kisii',
     badge: 'Producer',
     icon: Sprout,
     defaultDestination: '/dashboard',
-    themeColor: 'text-emerald-700',
     themeBg: 'bg-emerald-500',
   },
   buyer: {
-    initials: 'FL',
-    name: 'FreshLink Kisii',
-    subtitle: 'Wholesale Buyer / Aggregator',
     roleLabel: 'Buyer Workspace',
-    location: 'Regional Sourcing Hub · Kisii',
     badge: 'Aggregator',
     icon: ShoppingCart,
     defaultDestination: '/marketplace',
-    themeColor: 'text-[#FF5A1F]',
     themeBg: 'bg-[#FF5A1F]',
   },
   facility_operator: {
-    initials: 'CH',
-    name: 'Kisii Central Cold Hub',
-    subtitle: 'Facility Operator (Bay #01)',
-    roleLabel: 'Storage Operator Hub',
-    location: 'Kisii Town Cold Hub',
-    badge: 'Operator',
+    roleLabel: 'Facility Operator',
+    badge: 'Cold Hub',
     icon: Warehouse,
     defaultDestination: '/partners',
-    themeColor: 'text-blue-700',
     themeBg: 'bg-blue-600',
   },
   transport_provider: {
-    initials: 'SM',
-    name: 'Songa Mobility Fleet',
-    subtitle: 'Transport Logistics Partner',
-    roleLabel: 'Fleet Operations',
-    location: 'Kisii Transit Depot',
+    roleLabel: 'Transport Provider',
     badge: 'Logistics',
     icon: Truck,
     defaultDestination: '/transport',
-    themeColor: 'text-amber-700',
     themeBg: 'bg-amber-600',
   },
 };
 
+// Strict Phase 2 Workspace Navigation Definitions
 const farmerNavigation = [
-  { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/harvests/new', label: 'Register harvest', icon: Leaf },
+  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/harvests', label: 'My harvests', icon: Sprout },
-  { href: '/storage', label: 'Find storage', icon: Warehouse },
-  { href: '/storage/requests', label: 'Storage requests', icon: PackageOpen },
-  { href: '/storage/inventory', label: 'My stored produce', icon: Boxes },
-  { href: '/storage/alerts', label: 'Storage alerts', icon: BellRing },
-  { href: '/transport', label: 'Transport & collections', icon: Truck },
+  { href: '/storage', label: 'Storage & preservation', icon: Warehouse },
   { href: '/marketplace', label: 'Marketplace', icon: Store },
-  { href: '/offers', label: 'Offers & bookings', icon: Boxes },
+  { href: '/storage/alerts', label: 'Activity', icon: BellRing },
 ];
 
 const buyerNavigation = [
-  { href: '/marketplace', label: 'Produce exchange', icon: Store },
-  { href: '/offers', label: 'Bids & escrow contracts', icon: Boxes },
-  { href: '/storage/inventory', label: 'Purchased produce', icon: PackageOpen },
-  { href: '/transport', label: 'Logistics & handoff', icon: Truck },
-  { href: '/storage', label: 'Cold hub network', icon: Warehouse },
-  { href: '/dashboard', label: 'Market trends', icon: LayoutDashboard },
+  { href: '/marketplace', label: 'Overview', icon: LayoutDashboard },
+  { href: '/marketplace?filter=all', label: 'Find produce', icon: Store },
+  { href: '/offers', label: 'Offers & purchases', icon: Boxes },
+  { href: '/transport', label: 'Logistics', icon: Truck },
+  { href: '/profile', label: 'Account', icon: User },
 ];
 
 const facilityOperatorNavigation = [
-  { href: '/partners', label: 'Operations overview', icon: LayoutDashboard },
-  { href: '/storage/requests', label: 'Intake & release requests', icon: PackageOpen },
-  { href: '/storage/inventory', label: 'Cold room bay ledger', icon: Boxes },
-  { href: '/storage/facility-01/conditions', label: 'Bay climate telemetry', icon: BellRing },
-  { href: '/storage/alerts', label: 'Climate alerts', icon: BellRing },
-  { href: '/storage', label: 'Facility network', icon: Warehouse },
+  { href: '/partners', label: 'Operations', icon: LayoutDashboard },
+  { href: '/storage/facility-01/conditions', label: 'Capacity & conditions', icon: Thermometer },
+  { href: '/storage/requests', label: 'Incoming requests', icon: PackageOpen },
+  { href: '/storage/inventory', label: 'Stored inventory', icon: Boxes },
+  { href: '/storage/requests?tab=releases', label: 'Releases & handovers', icon: ShieldCheck },
+  { href: '/profile', label: 'Account', icon: User },
 ];
 
 const transportProviderNavigation = [
-  { href: '/transport', label: 'Transport overview', icon: LayoutDashboard },
-  { href: '/transport/requests/TJ-2026-001', label: 'Active collection route', icon: Truck },
-  { href: '/storage/requests', label: 'Delivery handoffs', icon: PackageOpen },
-  { href: '/storage', label: 'Cold hub network', icon: Warehouse },
+  { href: '/transport', label: 'Available jobs', icon: LayoutDashboard },
+  { href: '/transport?tab=collections', label: 'My collections', icon: Truck },
+  { href: '/transport/requests/TJ-2026-001', label: 'Active deliveries', icon: Navigation },
+  { href: '/transport?tab=history', label: 'Handover history', icon: History },
+  { href: '/profile', label: 'Account', icon: User },
 ];
 
 const roleNavigation: Record<WorkspaceRole, typeof farmerNavigation> = {
@@ -160,64 +136,67 @@ function clearActiveRole() {
 
 export function AppShellClient({
   children,
-  role = 'farmer',
+  userProfile,
 }: {
   children: React.ReactNode;
-  role?: WorkspaceRole;
+  userProfile: AuthenticatedUserProfile;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
-  const [activeRole, setActiveRole] = useState<WorkspaceRole>(role);
+  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
 
-  // Sync role from cookie/localStorage if user previously authenticated as another role
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        const match = document.cookie.match(/(?:^|;\s*)kavandor_active_role=([^;]+)/);
-        const cookieRole = match ? (decodeURIComponent(match[1]) as WorkspaceRole) : null;
-        const storedRole = (localStorage.getItem('kavandor_active_role') as WorkspaceRole) || cookieRole;
-        if (storedRole && storedRole in roleProfiles && role === 'farmer') {
-          setActiveRole(storedRole);
-        } else {
-          setActiveRole(role);
-        }
-      } catch {
-        setActiveRole(role);
-      }
-    }, 0);
+  // Authoritative role derived directly from server verification
+  const activeRole: WorkspaceRole =
+    userProfile.role in roleMeta ? (userProfile.role as WorkspaceRole) : 'farmer';
 
-    return () => clearTimeout(timer);
-  }, [role]);
-
-  const profile = useMemo(() => roleProfiles[activeRole] || roleProfiles.farmer, [activeRole]);
+  const meta = useMemo(() => roleMeta[activeRole] || roleMeta.farmer, [activeRole]);
   const navigation = useMemo(() => roleNavigation[activeRole] || farmerNavigation, [activeRole]);
 
-  const quickNavigation = useMemo(() => {
-    if (activeRole === 'farmer') {
-      return [navigation[0], navigation[1], navigation[2], navigation[7], navigation[8]];
-    }
-    return navigation.slice(0, 5);
-  }, [activeRole, navigation]);
+  const initials = useMemo(() => {
+    const parts = (userProfile.fullName || 'James Nyakundi').split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return (userProfile.fullName || 'K')[0].toUpperCase();
+  }, [userProfile.fullName]);
 
   const isActive = (href: string) => {
-    if (href === '/harvests') {
+    const cleanHref = href.split('?')[0];
+    if (cleanHref === '/harvests') {
       return pathname.startsWith('/harvests') && pathname !== '/harvests/new';
     }
-    if (href === '/partners') {
+    if (cleanHref === '/partners') {
       return pathname.startsWith('/partners');
     }
-    return pathname === href;
+    if (cleanHref === '/storage') {
+      return pathname === '/storage' || (pathname.startsWith('/storage/') && !pathname.startsWith('/storage/requests') && !pathname.startsWith('/storage/inventory') && !pathname.startsWith('/storage/alerts'));
+    }
+    return pathname === cleanHref;
   };
 
-  const handleSwitchRole = (newRole: WorkspaceRole) => {
-    setActiveRole(newRole);
+  const handleSwitchPersona = async (newRole: WorkspaceRole) => {
+    setIsSwitchingRole(true);
     setRoleMenuOpen(false);
     setMenuOpen(false);
     persistActiveRole(newRole);
-    const dest = roleProfiles[newRole].defaultDestination;
+
+    // If demo mode, sign into Supabase Auth as the demo user so server session matches
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      try {
+        await supabase.auth.signInWithPassword({
+          email: `${newRole}@kavandor.ag`,
+          password: 'Password123!',
+        });
+      } catch {
+        // non-blocking fallback
+      }
+    }
+
+    const dest = roleMeta[newRole].defaultDestination;
     router.push(dest);
+    router.refresh();
+    setTimeout(() => setIsSwitchingRole(false), 500);
   };
 
   const handleSignOut = async () => {
@@ -254,30 +233,35 @@ export function AppShellClient({
             </button>
           </div>
 
-          {/* Active Role Indicator Badge */}
+          {/* Active Workspace / Role Indicator Badge */}
           <div className="mt-4 px-2">
             <div className="flex items-center justify-between rounded-xl border border-white/10 bg-[#22252A] px-3 py-2 text-xs">
               <div className="flex items-center gap-2">
-                <span className={`size-2 rounded-full ${profile.themeBg} animate-pulse`} />
-                <span className="font-bold text-white tracking-wide">{profile.roleLabel}</span>
+                <span className={`size-2 rounded-full ${meta.themeBg} animate-pulse`} />
+                <span className="font-bold text-white tracking-wide">{meta.roleLabel}</span>
               </div>
               <span className="font-mono text-[10px] uppercase font-bold text-[#FF5A1F] bg-[#FF5A1F]/15 px-2 py-0.5 rounded-md">
-                {profile.badge}
+                {meta.badge}
               </span>
             </div>
+            {userProfile.isDemo && (
+              <p className="mt-1.5 px-1 text-[10px] font-mono text-neutral-400">
+                Demo Workspace Mode · Verified local seed
+              </p>
+            )}
           </div>
 
-          {/* Navigation Links */}
+          {/* Role Navigation Links */}
           <nav
             className="mt-6 flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar"
-            aria-label={`${profile.roleLabel} navigation`}
+            aria-label={`${meta.roleLabel} navigation`}
           >
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
               return (
                 <Link
-                  key={item.href}
+                  key={item.label}
                   href={item.href}
                   onClick={() => setMenuOpen(false)}
                   className={cn(
@@ -295,28 +279,36 @@ export function AppShellClient({
           </nav>
         </div>
 
-        {/* Profile Card & Workspace Switcher */}
+        {/* Profile Card & Account Access */}
         <div className="mt-4 border-t border-white/10 pt-4">
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-[#22252A] p-2.5">
+          <Link
+            href="/profile"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center justify-between gap-2 rounded-xl bg-[#22252A] p-2.5 hover:bg-[#2b2f35] transition"
+          >
             <div className="flex items-center gap-3 min-w-0">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/10 text-sm font-bold text-white">
-                {profile.initials}
+                {initials}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">{profile.name}</p>
-                <p className="truncate text-xs text-neutral-400">{profile.subtitle}</p>
+                <p className="truncate text-sm font-semibold text-white">{userProfile.fullName}</p>
+                <p className="truncate text-xs text-neutral-400">{userProfile.location}</p>
               </div>
             </div>
             <button
               type="button"
-              onClick={handleSignOut}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSignOut();
+              }}
               className="grid size-8 shrink-0 place-items-center rounded-lg text-neutral-400 hover:bg-white/10 hover:text-white transition"
               title="Sign out"
               aria-label="Sign out"
             >
               <LogOut size={16} />
             </button>
-          </div>
+          </Link>
         </div>
       </aside>
 
@@ -346,24 +338,25 @@ export function AppShellClient({
             {/* Context location badge */}
             <div className="hidden items-center gap-2 text-sm text-[#74767B] sm:flex">
               <Leaf size={16} className="text-[#FF5A1F]" />
-              <span className="font-semibold text-[#17191D]">{profile.name}</span>
+              <span className="font-semibold text-[#17191D]">{userProfile.fullName}</span>
               <span className="text-[#74767B]/40">·</span>
-              <span>{profile.location}</span>
+              <span>{userProfile.location}</span>
             </div>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            {/* Interactive Workspace / Role Switcher Pill */}
+            {/* Interactive Workspace Persona Selector (active in demo mode) */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-                className="flex items-center gap-2 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] px-3 py-1.5 text-xs font-bold text-[#17191D] hover:bg-white hover:border-[#FF5A1F] transition shadow-2xs"
+                disabled={isSwitchingRole}
+                className="flex items-center gap-2 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] px-3 py-1.5 text-xs font-bold text-[#17191D] hover:bg-white hover:border-[#FF5A1F] transition shadow-2xs disabled:opacity-50"
                 aria-expanded={roleMenuOpen}
                 aria-haspopup="true"
               >
-                <span className={`size-2 rounded-full ${profile.themeBg}`} />
-                <span>{profile.roleLabel}</span>
+                <span className={`size-2 rounded-full ${meta.themeBg}`} />
+                <span>{meta.roleLabel}</span>
                 <ChevronDown size={14} className={cn('transition-transform', roleMenuOpen && 'rotate-180')} />
               </button>
 
@@ -377,18 +370,18 @@ export function AppShellClient({
                   />
                   <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-[#E2DED6] bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-100">
                     <p className="px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[#74767B]">
-                      Switch Workspace Role
+                      Switch Persona (Demo Mode)
                     </p>
                     <div className="space-y-1">
-                      {(Object.keys(roleProfiles) as WorkspaceRole[]).map((rKey) => {
-                        const rProf = roleProfiles[rKey];
+                      {(Object.keys(roleMeta) as WorkspaceRole[]).map((rKey) => {
+                        const rProf = roleMeta[rKey];
                         const Icon = rProf.icon;
                         const isCurrent = activeRole === rKey;
                         return (
                           <button
                             key={rKey}
                             type="button"
-                            onClick={() => handleSwitchRole(rKey)}
+                            onClick={() => handleSwitchPersona(rKey)}
                             className={cn(
                               'flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition',
                               isCurrent
@@ -416,17 +409,27 @@ export function AppShellClient({
             {/* Live Network Badge */}
             <span className="hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 md:inline-flex">
               <ShieldCheck size={14} className="text-emerald-600" />
-              Kisii &amp; Nyamira Network
+              Kisii &amp; Nyamira
             </span>
 
-            {/* Notifications */}
+            {/* Activity Notifications */}
             <Link
               href="/storage/alerts"
               className="relative grid size-10 place-items-center rounded-full border border-[#E2DED6] text-[#17191D] hover:bg-[#FAF9F5] transition"
-              aria-label="Notifications"
+              aria-label="Activity Alerts"
             >
               <Bell size={18} />
               <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-[#FF5A1F] ring-2 ring-white" />
+            </Link>
+
+            {/* User Profile */}
+            <Link
+              href="/profile"
+              className="grid size-10 place-items-center rounded-full border border-[#E2DED6] bg-[#FAF9F5] text-xs font-bold text-[#17191D] hover:border-[#FF5A1F] transition"
+              title="My Account"
+              aria-label="My Account"
+            >
+              <User size={18} />
             </Link>
           </div>
         </header>
@@ -439,12 +442,12 @@ export function AppShellClient({
         className="fixed inset-x-0 bottom-0 z-30 grid h-16 grid-cols-5 border-t border-[#E2DED6] bg-white px-1 lg:hidden"
         aria-label="Quick mobile navigation"
       >
-        {quickNavigation.map((item) => {
+        {navigation.slice(0, 5).map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 px-1 text-center text-[9px] font-semibold transition-colors',
@@ -452,16 +455,7 @@ export function AppShellClient({
               )}
             >
               <Icon size={18} strokeWidth={active ? 2.5 : 1.8} />
-              <span className="truncate max-w-full">
-                {item.label
-                  .replace('Register harvest', 'Register')
-                  .replace('Transport & collections', 'Transport')
-                  .replace('Storage alerts', 'Alerts')
-                  .replace('Produce exchange', 'Market')
-                  .replace('Bids & escrow contracts', 'Bids')
-                  .replace('Cold room bay ledger', 'Ledger')
-                  .replace('Bay climate telemetry', 'Climate')}
-              </span>
+              <span className="truncate max-w-full">{item.label}</span>
             </Link>
           );
         })}

@@ -151,12 +151,26 @@ export function AuthPanel() {
     }
   }
 
-  // 2. Instant Pitch Mode: 1-Click access to role workspace for live hackathon presentations
-  function handlePitchDemoAccess() {
+  // 2. Instant Pitch Mode: 1-Click access to role workspace with real Supabase Auth session
+  async function handlePitchDemoAccess() {
     setIsSubmitting(true);
-    setStatus(`Accessing ${activeRoleConfig.fullTitle} workspace...`);
+    setStatus(`Signing into ${activeRoleConfig.fullTitle} workspace...`);
     persistClientRole(selectedRole);
+
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      try {
+        await supabase.auth.signInWithPassword({
+          email: `${selectedRole}@kavandor.ag`,
+          password: 'Password123!',
+        });
+      } catch {
+        // Fallback for offline demo
+      }
+    }
+
     router.push(activeRoleConfig.destination);
+    router.refresh();
   }
 
   // 3. Email & Password authentication

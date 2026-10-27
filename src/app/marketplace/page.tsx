@@ -3,9 +3,11 @@ import { ArrowRight, MapPin, Search, SlidersHorizontal } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { StatusBadge } from '@/components/ui/status-badge';
 
+export const instant = false;
+
 export default function MarketplacePage() {
   return (
-    <AppShell role="buyer">
+    <AppShell>
       <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>

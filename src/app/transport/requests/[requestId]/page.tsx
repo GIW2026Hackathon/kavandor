@@ -15,7 +15,7 @@ const events = [
 export default async function TransportTrackingPage({ params }: { params: Promise<{ requestId: string }> }) {
   const { requestId } = await params;
   return (
-    <AppShell role="transport_provider">
+    <AppShell>
       <div className="mx-auto max-w-5xl px-4 py-7 sm:px-6 lg:py-10">
         <p className="text-xs font-mono font-bold uppercase text-emerald-600">Active Transit Dispatch · Verified Provider Network</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#17191D] sm:text-4xl">Transport tracking</h1>

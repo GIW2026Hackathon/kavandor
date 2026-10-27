@@ -8,9 +8,11 @@ const requestRows = [
   { code: 'RES-2026-002', crop: 'Avocados · 80 kg', farmer: 'Wanjiku M.' , arrival: '28 Oct · 10:30', status: 'Capacity check' },
 ];
 
+export const instant = false;
+
 export default function PartnersPage() {
   return (
-    <AppShell role="facility_operator">
+    <AppShell>
       <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 lg:px-8">
         <PageHeader eyebrow="Facility operations" title="Kisii Cold Store" description="Review incoming produce, manage occupied capacity and monitor storage conditions." />
 

@@ -7,6 +7,8 @@ const alerts = [
   { severity: 'Notice', title: 'Logistics Dispatch Assigned', detail: 'Vehicle Probox KDH 412X en route for scheduled farmgate collection.', source: 'Transport Dispatch Service', status: 'En Route', time: 'Today · 08:45 EAT' },
 ];
 
+export const instant = false;
+
 export default function StorageAlertsPage() {
   return (
     <AppShell>

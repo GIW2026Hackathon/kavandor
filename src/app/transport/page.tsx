@@ -3,9 +3,11 @@ import { ArrowRight, Truck } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { PageHeader } from '@/components/ui/page-header';
 
+export const instant = false;
+
 export default function TransportOverviewPage() {
   return (
-    <AppShell role="transport_provider">
+    <AppShell>
       <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 lg:px-8">
         <PageHeader eyebrow="Logistics & Dispatch" title="Transport & Collections" description="Monitor certified agricultural haulage, farmgate pickups, and cold chain transfer dispatches." />
         <section className="mt-7 rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-6 shadow-xs">
