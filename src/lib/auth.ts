@@ -15,9 +15,9 @@ export function getSocialAuthProviders(): SocialAuthProviderConfig[] {
     {
       id: 'google',
       label: 'Google',
-      description: 'Continue with a Google account.',
-      enabled: Boolean(publicEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID),
-      envVar: 'NEXT_PUBLIC_GOOGLE_CLIENT_ID',
+      description: 'Continue with your Google account.',
+      enabled: hasPublicSupabaseConfig,
+      envVar: 'NEXT_PUBLIC_SUPABASE_URL',
     },
     {
       id: 'facebook',
