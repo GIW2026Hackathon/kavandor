@@ -3,10 +3,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowRight, CheckCircle2, Clock, LocateFixed, MapPin, Search } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, Loader2, LocateFixed, MapPin, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import type { CertifiedFacility } from '@/data/facilities';
+import { detectCurrentLocation } from '@/lib/geo';
 
 function normalizeFacility(raw: Record<string, unknown>): CertifiedFacility {
   const type = ((raw.facilityType || raw.facility_type || raw.type || 'cold_storage') as string) as 'cold_storage' | 'ambient' | 'drying';
@@ -52,6 +53,22 @@ export function StorageDiscoveryClient() {
   const [locality, setLocality] = useState('');
   const [storageType, setStorageType] = useState(initialType);
   const [loading, setLoading] = useState(true);
+  const [locating, setLocating] = useState(false);
+  const [geoFeedback, setGeoFeedback] = useState('');
+
+  const handleLocate = async () => {
+    setLocating(true);
+    setGeoFeedback('');
+    try {
+      const res = await detectCurrentLocation();
+      setLocality(res.county);
+      setGeoFeedback(`Located in ${res.county}`);
+    } catch (err) {
+      setGeoFeedback(err instanceof Error ? err.message : 'Could not detect location');
+    } finally {
+      setLocating(false);
+    }
+  };
 
   useEffect(() => {
     fetch('/api/facilities')
@@ -134,9 +151,27 @@ export function StorageDiscoveryClient() {
               <option value="dry">Solar Dehydration</option>
             </select>
           </label>
-          <button type="button" onClick={() => navigator.geolocation?.getCurrentPosition(() => setLocality('Kisii'))} className="mt-[21px] flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E2DED6] bg-white px-4 text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] shadow-2xs transition">
-            <LocateFixed size={17} className="text-[#FF5A1F]" /> Use location
-          </button>
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={handleLocate}
+              disabled={locating}
+              className="mt-[21px] flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E2DED6] bg-white px-4 text-sm font-bold text-[#17191D] hover:bg-[#FAF9F5] shadow-2xs transition disabled:opacity-60"
+            >
+              {locating ? (
+                <>
+                  <Loader2 size={17} className="animate-spin text-[#FF5A1F]" /> Locating…
+                </>
+              ) : (
+                <>
+                  <LocateFixed size={17} className="text-[#FF5A1F]" /> Use location
+                </>
+              )}
+            </button>
+            {geoFeedback && (
+              <p className="mt-1 text-[11px] font-semibold text-emerald-700">{geoFeedback}</p>
+            )}
+          </div>
         </div>
       </section>
 

@@ -47,15 +47,17 @@ export async function assessHarvest(input?: HarvestAssessmentInput): Promise<AIA
   const notes = input?.handlingNotes?.trim() || 'Standard harvest inspection.';
   const now = new Date().toISOString();
 
+  const apiKey = env.AI_PROVIDER_API_KEY || env.GEMINI_API_KEY;
+
   // If no AI key is configured, return high-accuracy deterministic agronomic assessment
-  if (!hasAiConfig || !env.AI_PROVIDER_API_KEY) {
+  if (!hasAiConfig || !apiKey) {
     return createDeterministicAssessment(cropName, quantity, location, notes, now, 'kavandor-agronomic-engine');
   }
 
   try {
     const parts: Array<Record<string, unknown>> = [];
 
-    // Multimodal image processing: handle base64 or data URL
+    // Multimodal image processing: handle base64, data URL, or remote HTTP URL
     let inlineData: { mimeType: string; data: string } | null = null;
     if (input?.imageBase64) {
       inlineData = {
@@ -69,6 +71,21 @@ export async function assessHarvest(input?: HarvestAssessmentInput): Promise<AIA
           mimeType: match[1],
           data: match[2],
         };
+      }
+    } else if (input?.photoUrl && (input.photoUrl.startsWith('http://') || input.photoUrl.startsWith('https://'))) {
+      try {
+        const imgRes = await fetch(input.photoUrl, { signal: AbortSignal.timeout(8000) });
+        if (imgRes.ok) {
+          const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+          const buffer = await imgRes.arrayBuffer();
+          const base64 = Buffer.from(buffer).toString('base64');
+          inlineData = {
+            mimeType: contentType,
+            data: base64,
+          };
+        }
+      } catch (fetchErr) {
+        console.warn('[KAVANDOR AI] Could not download photoUrl for inline multimodal grading:', fetchErr);
       }
     }
 
@@ -126,7 +143,7 @@ Return ONLY a valid JSON object matching this schema:
 
     const modelName = 'gemini-2.5-flash';
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.AI_PROVIDER_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {

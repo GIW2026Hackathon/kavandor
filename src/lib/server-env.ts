@@ -8,4 +8,4 @@ const serverEnvSchema = z.object({
 });
 
 export const serverEnv = serverEnvSchema.parse(process.env);
-export const hasAiConfig = Boolean(serverEnv.AI_PROVIDER_API_KEY);
+export const hasAiConfig = Boolean(serverEnv.AI_PROVIDER_API_KEY || process.env.GEMINI_API_KEY);

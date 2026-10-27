@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Eye, Info, TriangleAlert, ShieldCheck } from 'lucide-react';
 import { notFound } from 'next/navigation';
@@ -6,6 +7,7 @@ import { QuantityDisplay } from '@/components/ui/quantity-display';
 import { StatusBadge, type HarvestStatus } from '@/components/ui/status-badge';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server';
 import { assessHarvest } from '@/lib/ai';
+import { ReAssessButton } from '@/components/harvest/reassess-button';
 
 export const instant = false;
 
@@ -22,7 +24,10 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
     handling_notes?: string | null;
     status: string;
     created_at: string;
+    photo_path?: string | null;
   } | null = null;
+
+  let photoSignedUrl: string | null = null;
 
   let assessment: {
     crop: string;
@@ -47,17 +52,35 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
     }
 
     if (harvest) {
+      // Query photo if exists
+      const { data: photoData } = await db
+        .from('harvest_photos')
+        .select('storage_path')
+        .eq('harvest_id', id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const storagePath = photoData?.storage_path || harvest.photo_path;
+      if (storagePath) {
+        const { data: signed } = await db.storage
+          .from('harvest-photos')
+          .createSignedUrl(storagePath, 3600);
+        photoSignedUrl = signed?.signedUrl || null;
+      }
+
       const { data: aData } = await db.from('assessments').select('*').eq('harvest_id', id).maybeSingle();
       if (aData) {
         assessment = aData;
       } else {
-        // Run agronomic assessment
+        // Run agronomic assessment with Gemini Vision
         const result = await assessHarvest({
           crop: harvest.crop,
           quantity: Number(harvest.quantity),
           unit: harvest.unit,
           location: harvest.location,
           handlingNotes: harvest.handling_notes || undefined,
+          photoUrl: photoSignedUrl || undefined,
         });
 
         assessment = {
@@ -153,8 +176,24 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
 
         <div className="mt-7 grid gap-6 lg:grid-cols-[.72fr_1.28fr]">
           {/* Produce Visual Preview & Batch Stamp */}
-          <div className="relative min-h-72 overflow-hidden rounded-2xl bg-[linear-gradient(145deg,#22252A_0%,#17191D_100%)] border border-[#22252A] shadow-md flex flex-col justify-end p-5">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_35%,rgba(255,255,255,.15)_0_8%,transparent_9%),linear-gradient(135deg,rgba(255,255,255,.05),rgba(0,0,0,.4))]" />
+          <div className="relative min-h-72 overflow-hidden rounded-2xl bg-[#17191D] border border-[#22252A] shadow-md flex flex-col justify-end p-5">
+            {photoSignedUrl ? (
+              <>
+                <Image
+                  src={photoSignedUrl}
+                  alt={harvest.crop}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 400px"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                <span className="absolute top-3 left-3 rounded-md bg-[#17191D]/85 px-2.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-xs">
+                  Analyzed Produce Photo
+                </span>
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_35%,rgba(255,255,255,.15)_0_8%,transparent_9%),linear-gradient(135deg,rgba(255,255,255,.05),rgba(0,0,0,.4))]" />
+            )}
             <div className="relative z-10 rounded-xl border border-white/10 bg-[#17191D]/90 p-4 text-white backdrop-blur-md">
               <p className="text-xs font-mono uppercase text-[#FF5A1F]">
                 Declared Farmgate Load
@@ -170,7 +209,7 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
 
           {/* Condition Appraisal & Defect Analysis */}
           <section className="rounded-2xl border border-[#E2DED6] bg-white p-5 sm:p-6 shadow-xs">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">
                   Condition Appraisal &amp; Agronomic Triage
@@ -178,10 +217,16 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
                 <h2 className="mt-2 text-2xl font-bold text-[#17191D]">
                   Grade: {assessment?.confidence && assessment.confidence > 0.8 ? 'A-Standard' : 'Commercial Grade'}
                 </h2>
+                <p className="mt-1 text-xs text-[#74767B]">
+                  Provider: <span className="font-mono font-semibold text-[#17191D]">{assessment?.provider || 'kavandor-agronomic-engine'}</span>
+                </p>
               </div>
-              <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
-                Confidence ({assessment ? Math.round(assessment.confidence * 100) : 85}%)
-              </span>
+              <div className="flex flex-col items-end gap-2">
+                <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+                  Confidence ({assessment ? Math.round(assessment.confidence * 100) : 85}%)
+                </span>
+                <ReAssessButton harvestId={harvest.id} />
+              </div>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
