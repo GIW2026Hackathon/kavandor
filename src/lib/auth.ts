@@ -30,7 +30,10 @@ export function getSocialAuthProviders(): SocialAuthProviderConfig[] {
 }
 
 export function getAuthRedirectUrl() {
-  return publicEnv.NEXT_PUBLIC_SITE_URL;
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return publicEnv.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 }
 
 export function isAuthReady() {
