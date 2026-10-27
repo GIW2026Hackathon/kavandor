@@ -124,8 +124,9 @@ Return ONLY a valid JSON object matching this schema:
 
     parts.push({ text: promptText.trim() });
 
+    const modelName = 'gemini-2.5-flash';
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.AI_PROVIDER_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${env.AI_PROVIDER_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -155,7 +156,7 @@ Return ONLY a valid JSON object matching this schema:
     }
 
     const parsedJson = JSON.parse(rawContent);
-    parsedJson.provider = 'gemini-1.5-flash';
+    parsedJson.provider = modelName;
     parsedJson.createdAt = now;
 
     return aiAssessmentSchema.parse(parsedJson);
