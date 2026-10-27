@@ -6,12 +6,110 @@ import { assessHarvest } from '@/lib/ai';
 import type { AuthContext } from '@/lib/auth-types';
 import type { ServerSupabaseClient } from '@/lib/supabase-server';
 
-const createHarvestSchema = harvestSchema.omit({ photoUrl: true }).extend({
-  variety: z.string().trim().max(120).optional(),
-  availability: z.string().trim().max(120).optional(),
-  county: z.string().trim().max(120).optional(),
-  idempotencyKey: z.string().uuid().optional(),
-}).strict();
+const createHarvestSchema = z.object({
+  crop: z.string().trim().min(2, { message: 'Produce name must be at least 2 characters.' }).max(120),
+  quantity: z.coerce.number().positive({ message: 'Quantity must be greater than zero.' }).finite(),
+  unit: z.enum(HARVEST_UNITS),
+  harvestDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid datetime format.' }).transform((val) => new Date(val).toISOString()),
+  location: z.string().trim().min(2, { message: 'Location must be at least 2 characters.' }).max(240),
+  variety: z.string().trim().max(120).optional().nullable().transform((v) => v || undefined),
+  availability: z.string().trim().max(120).optional().nullable().transform((v) => v || undefined),
+  county: z.string().trim().max(120).optional().nullable().transform((v) => v || undefined),
+  handlingNotes: z.string().max(2000).optional().nullable().transform((v) => v || undefined),
+  idempotencyKey: z.string().uuid().optional().nullable().or(z.literal('')).transform((v) => v || undefined),
+  photoUrl: z.string().optional().nullable(),
+});
+
+const DB_ALLOWED_UNITS = new Set(['kg', 'crate', 'bucket', 'box']);
+
+interface NormalizedHarvestUnit {
+  quantity: number;
+  unit: 'kg' | 'crate' | 'bucket' | 'box';
+  handlingNotes?: string;
+}
+
+export function normalizeHarvestUnit(
+  crop: string,
+  quantity: number,
+  unit: string,
+  existingNotes?: string | null
+): NormalizedHarvestUnit {
+  if (DB_ALLOWED_UNITS.has(unit)) {
+    return { quantity, unit: unit as 'kg' | 'crate' | 'bucket' | 'box', handlingNotes: existingNotes || undefined };
+  }
+
+  let normalizedQuantity = quantity;
+  let normalizedUnit: 'kg' | 'crate' | 'bucket' | 'box' = 'kg';
+  let noteAnnotation = `Original intake: ${quantity} ${unit}`;
+
+  switch (unit) {
+    case 'tonne':
+      normalizedQuantity = quantity * 1000;
+      normalizedUnit = 'kg';
+      noteAnnotation = `Converted from ${quantity} tonnes (1 tonne = 1,000 kg)`;
+      break;
+    case 'g':
+      normalizedQuantity = Math.max(0.1, Number((quantity / 1000).toFixed(2)));
+      normalizedUnit = 'kg';
+      noteAnnotation = `Converted from ${quantity} grams`;
+      break;
+    case 'carton':
+      normalizedUnit = 'box';
+      noteAnnotation = `Intake: ${quantity} cartons`;
+      break;
+    case 'bag': {
+      const kgPerBag = ['maize', 'corn', 'beans', 'rice', 'wheat', 'sorghum'].some((c) =>
+        crop.toLowerCase().includes(c)
+      ) ? 90 : 50;
+      normalizedQuantity = quantity * kgPerBag;
+      normalizedUnit = 'kg';
+      noteAnnotation = `Intake: ${quantity} bags (est. ${normalizedQuantity} kg at ${kgPerBag} kg/bag)`;
+      break;
+    }
+    case 'sack': {
+      const kgPerSack = 50;
+      normalizedQuantity = quantity * kgPerSack;
+      normalizedUnit = 'kg';
+      noteAnnotation = `Intake: ${quantity} sacks (est. ${normalizedQuantity} kg at 50 kg/sack)`;
+      break;
+    }
+    case 'piece':
+    case 'head':
+      normalizedQuantity = Number((quantity * 2.5).toFixed(1));
+      normalizedUnit = 'kg';
+      noteAnnotation = `Intake: ${quantity} ${unit}s (est. ${normalizedQuantity} kg)`;
+      break;
+    case 'bunch':
+      normalizedQuantity = quantity * 20;
+      normalizedUnit = 'kg';
+      noteAnnotation = `Intake: ${quantity} bunches (est. ${normalizedQuantity} kg at 20 kg/bunch)`;
+      break;
+    case 'dozen':
+      normalizedQuantity = Number((quantity * 12 * 0.15).toFixed(1));
+      normalizedUnit = 'kg';
+      noteAnnotation = `Intake: ${quantity} dozen`;
+      break;
+    case 'litre':
+      normalizedQuantity = Number((quantity * 1.03).toFixed(2));
+      normalizedUnit = 'kg';
+      noteAnnotation = `Intake: ${quantity} litres`;
+      break;
+    case 'bale':
+      normalizedQuantity = quantity * 50;
+      normalizedUnit = 'kg';
+      noteAnnotation = `Intake: ${quantity} bales (approx. ${normalizedQuantity} kg)`;
+      break;
+    default:
+      normalizedUnit = 'kg';
+  }
+
+  const mergedNotes = [existingNotes, noteAnnotation].filter(Boolean).join(' | ');
+  return {
+    quantity: normalizedQuantity,
+    unit: normalizedUnit,
+    handlingNotes: mergedNotes,
+  };
+}
 
 const listingSchema = z.object({
   harvestId: z.string().uuid(),
@@ -21,14 +119,20 @@ const listingSchema = z.object({
 
 export async function createHarvest(supabase: ServerSupabaseClient, input: unknown) {
   const payload = createHarvestSchema.parse(input);
+  const normalized = normalizeHarvestUnit(
+    payload.crop,
+    payload.quantity,
+    payload.unit,
+    payload.handlingNotes
+  );
   const location = [payload.location, payload.county].filter(Boolean).join(', ');
   let { data, error } = await supabase.rpc('kavandor_create_harvest', {
     p_crop: payload.crop,
-    p_quantity: payload.quantity,
-    p_unit: payload.unit,
+    p_quantity: normalized.quantity,
+    p_unit: normalized.unit,
     p_harvest_date: payload.harvestDate,
     p_location: location,
-    p_handling_notes: payload.handlingNotes ?? null,
+    p_handling_notes: normalized.handlingNotes ?? null,
     p_variety: payload.variety ?? null,
     p_availability: payload.availability ?? null,
     p_idempotency_key: payload.idempotencyKey ?? null,
@@ -38,11 +142,11 @@ export async function createHarvest(supabase: ServerSupabaseClient, input: unkno
     const freshKey = crypto.randomUUID();
     const retry = await supabase.rpc('kavandor_create_harvest', {
       p_crop: payload.crop,
-      p_quantity: payload.quantity,
-      p_unit: payload.unit,
+      p_quantity: normalized.quantity,
+      p_unit: normalized.unit,
       p_harvest_date: payload.harvestDate,
       p_location: location,
-      p_handling_notes: payload.handlingNotes ?? null,
+      p_handling_notes: normalized.handlingNotes ?? null,
       p_variety: payload.variety ?? null,
       p_availability: payload.availability ?? null,
       p_idempotency_key: freshKey,
@@ -53,7 +157,31 @@ export async function createHarvest(supabase: ServerSupabaseClient, input: unkno
     }
   }
 
-  if (error) throw error;
+  if (error) {
+    // Resilient direct table insert fallback
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id) {
+      const { data: fallbackData, error: fallbackError } = await supabase.from('harvests').insert({
+        farmer_id: user.id,
+        crop: payload.crop,
+        quantity: normalized.quantity,
+        unit: normalized.unit,
+        harvest_date: payload.harvestDate,
+        location,
+        handling_notes: normalized.handlingNotes ?? null,
+        variety: payload.variety ?? null,
+        availability: payload.availability ?? null,
+        idempotency_key: payload.idempotencyKey ?? null,
+        status: 'draft',
+        demo_data: false,
+      }).select().single();
+
+      if (!fallbackError && fallbackData) {
+        return mapHarvest(fallbackData);
+      }
+    }
+    throw error;
+  }
   return mapHarvest(data);
 }
 

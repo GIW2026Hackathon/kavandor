@@ -183,6 +183,7 @@ export default async function HarvestDetailPage({ params }: { params: Promise<{ 
                   src={photoSignedUrl}
                   alt={harvest.crop}
                   fill
+                  unoptimized
                   sizes="(max-width: 1024px) 100vw, 400px"
                   className="object-cover"
                 />
