@@ -24,7 +24,7 @@ export function FacilitySearchForm({
   serviceStart: string; setServiceStart: (value: string) => void;
 }) {
   return (
-    <form className="mt-6 rounded-2xl border border-[#E2DED6] bg-white p-5 shadow-xs sm:p-6" onSubmit={(event) => event.preventDefault()}>
+    <form id="harvest-details" className="mt-6 rounded-2xl border border-[#E2DED6] bg-white p-5 shadow-xs sm:p-6" onSubmit={(event) => event.preventDefault()}>
       <div className="flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#FFF0EB] text-[#FF5A1F]"><Search size={19} /></span>
         <div>

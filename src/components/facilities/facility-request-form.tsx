@@ -32,7 +32,7 @@ export function FacilityRequestForm({
   serviceStart: string;
   onClose: () => void;
 }) {
-  const [requestedStart, setRequestedStart] = useState(serviceStart);
+  const requestedStart = serviceStart;
   const [handling, setHandling] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -194,7 +194,7 @@ export function FacilityRequestForm({
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label="Requested service start">
-          <input type="date" value={requestedStart} onChange={(event) => setRequestedStart(event.target.value)} className="h-11 rounded-xl border border-[#E2DED6] px-3 text-sm text-[#17191D] focus:border-[#FF5A1F] focus:outline-none" />
+          <input type="date" value={requestedStart} readOnly className="h-11 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] px-3 text-sm text-[#17191D]" />
         </Field>
         <Field label="Planned duration (days)">
           <input type="number" min="1" max="60" value={durationDays} readOnly className="h-11 rounded-xl border border-[#E2DED6] bg-[#FAF9F5] px-3 text-sm text-[#17191D]" />

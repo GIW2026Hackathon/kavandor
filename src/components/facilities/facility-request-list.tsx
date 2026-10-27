@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 interface FacilityRequestRecord {
@@ -25,7 +24,7 @@ function isRequestRecord(value: unknown): value is FacilityRequestRecord {
     typeof record.created_at === 'string';
 }
 
-export function FacilityRequestList() {
+export function FacilityRequestList({ onDiscover }: { onDiscover?: () => void }) {
   const [requests, setRequests] = useState<FacilityRequestRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -94,7 +93,11 @@ export function FacilityRequestList() {
           </p>
         </article>
       ))}
-      <Link href="/storage" className="inline-flex min-h-11 items-center font-bold text-[#FF5A1F] hover:underline">Discover facilities</Link>
+      {onDiscover && (
+        <button type="button" onClick={onDiscover} className="inline-flex min-h-11 items-center font-bold text-[#FF5A1F] hover:underline">
+          Discover facilities
+        </button>
+      )}
     </section>
   );
 }

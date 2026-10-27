@@ -22,7 +22,6 @@ import {
   Truck,
   User,
   Warehouse,
-  BellRing,
   X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -77,9 +76,6 @@ const farmerNavigation = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/harvests', label: 'My harvests', icon: Sprout },
   { href: '/storage', label: 'Agri-Value Chain Facilities', icon: Warehouse },
-  { href: '/storage/requests', label: 'Facility requests', icon: PackageOpen },
-  { href: '/storage/inventory', label: 'My stored produce', icon: Boxes },
-  { href: '/storage/alerts', label: 'Storage alerts', icon: BellRing },
   { href: '/transport', label: 'Transport & collections', icon: Truck },
   { href: '/marketplace', label: 'Marketplace', icon: Store },
 ];
@@ -172,7 +168,8 @@ export function AppShellClient({
       return pathname.startsWith('/partners');
     }
     if (cleanHref === '/storage') {
-      return pathname === '/storage' || (pathname.startsWith('/storage/') && !pathname.startsWith('/storage/requests') && !pathname.startsWith('/storage/inventory') && !pathname.startsWith('/storage/alerts'));
+      return pathname === '/storage' || (activeRole === 'farmer' && pathname.startsWith('/storage/')) ||
+        (pathname.startsWith('/storage/') && !pathname.startsWith('/storage/requests') && !pathname.startsWith('/storage/inventory') && !pathname.startsWith('/storage/alerts'));
     }
     return pathname === cleanHref;
   };
@@ -417,7 +414,7 @@ export function AppShellClient({
 
             {/* Activity Notifications */}
             <Link
-              href="/storage/alerts"
+              href={activeRole === 'farmer' ? '/storage?section=alerts' : '/storage/alerts'}
               className="relative grid size-10 place-items-center rounded-full border border-[#E2DED6] text-[#17191D] hover:bg-[#FAF9F5] transition"
               aria-label="Activity Alerts"
             >

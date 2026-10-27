@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownUp, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownUp, BellRing, Boxes, PackageOpen, SlidersHorizontal, Warehouse } from 'lucide-react';
 import { FacilityCard } from '@/components/facilities/facility-card';
 import { FacilityComparison } from '@/components/facilities/facility-comparison';
-import { FacilityRequestForm } from '@/components/facilities/facility-request-form';
+import { FacilityDetails } from '@/components/facilities/facility-details';
+import { FarmerFacilitySectionContent, type FarmerFacilitySection } from '@/components/facilities/farmer-facility-sections';
 import { FacilitySearchForm } from '@/components/facilities/facility-search-form';
 import { DemoNotice } from '@/components/layout/app-shell-client';
 import { estimateServiceCost, facilityMatchesOutcome, getMatchingSlot, matchesFacilityCategory, normalizeCommodity, type FacilityCategory } from '@/lib/facility-discovery';
@@ -23,7 +24,7 @@ const categoryOptions: Array<{ value: FacilityCategory | 'all'; label: string }>
   { value: 'other', label: 'Other facilities' },
 ];
 
-export function FacilityDiscovery() {
+export function FacilityDiscovery({ initialSection = 'discover' }: { initialSection?: FarmerFacilitySection }) {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -41,7 +42,8 @@ export function FacilityDiscovery() {
   const [sort, setSort] = useState<'relevance' | 'availability' | 'cost'>('relevance');
   const [availabilityOnly, setAvailabilityOnly] = useState(false);
   const [comparedIds, setComparedIds] = useState<string[]>([]);
-  const [requestFacility, setRequestFacility] = useState<Facility | null>(null);
+  const [selectedFacilityId, setSelectedFacilityId] = useState('');
+  const [activeSection, setActiveSection] = useState<FarmerFacilitySection>(initialSection);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -55,7 +57,7 @@ export function FacilityDiscovery() {
         const parsed = FacilitySchema.array().safeParse(body.facilities);
         if (!parsed.success) throw new Error('Facility records were returned in an unsupported format.');
         const facilityId = new URLSearchParams(window.location.search).get('facilityId');
-        setRequestFacility(parsed.data.find((facility) => facility.id === facilityId) ?? null);
+        setSelectedFacilityId(parsed.data.some((facility) => facility.id === facilityId) ? facilityId ?? '' : '');
         setFacilities(parsed.data);
       } catch (reason) {
         if (reason instanceof Error && reason.name === 'AbortError') return;
@@ -100,6 +102,7 @@ export function FacilityDiscovery() {
     });
   }, [availabilityOnly, category, county, crop, days, facilities, harvestDate, outcome, quantityKg, serviceStart, sort]);
 
+  const selectedFacility = facilities.find((facility) => facility.id === selectedFacilityId) ?? null;
   const compared = facilities.filter((facility) => comparedIds.includes(facility.id));
   const toggleComparison = (id: string) => {
     setComparedIds((current) => current.includes(id)
@@ -126,6 +129,47 @@ export function FacilityDiscovery() {
         </div>
       </header>
 
+      <nav className="mt-5 overflow-x-auto" aria-label="Agri-Value Chain Facilities sections">
+        <div className="flex min-w-max gap-2 border-b border-[#E2DED6]" role="tablist">
+          {([
+            { id: 'discover', label: 'Discover facilities', icon: Warehouse },
+            { id: 'requests', label: 'Facility requests', icon: PackageOpen },
+            { id: 'inventory', label: 'My stored produce', icon: Boxes },
+            { id: 'alerts', label: 'Storage alerts', icon: BellRing },
+          ] as const).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              id={`facility-tab-${id}`}
+              aria-selected={activeSection === id}
+              aria-controls="facility-section-panel"
+              onClick={() => {
+                setActiveSection(id);
+                setSelectedFacilityId('');
+              }}
+              className={`inline-flex min-h-12 items-center gap-2 border-b-2 px-4 text-sm font-bold transition ${
+                activeSection === id
+                  ? 'border-[#FF5A1F] text-[#17191D]'
+                  : 'border-transparent text-[#74767B] hover:text-[#17191D]'
+              }`}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <div id="facility-section-panel" role="tabpanel" aria-labelledby={`facility-tab-${activeSection}`} tabIndex={0}>
+      {activeSection === 'discover' ? (
+        <>
+      <ol className="mt-5 grid gap-2 text-xs font-bold sm:grid-cols-3" aria-label="Facility request steps">
+        <Step number="1" label="Enter harvest details" active />
+        <Step number="2" label="Review a suitable facility" active={Boolean(selectedFacility)} />
+        <Step number="3" label="Request service" active={Boolean(selectedFacility)} />
+      </ol>
+
       <FacilitySearchForm
         crop={crop} setCrop={setCrop}
         quantity={quantity} setQuantity={setQuantity}
@@ -138,7 +182,9 @@ export function FacilityDiscovery() {
         serviceStart={serviceStart} setServiceStart={setServiceStart}
       />
 
-      <section className="mt-7" aria-labelledby="results-title">
+      {!selectedFacility && (
+        <>
+        <section className="mt-7" aria-labelledby="results-title">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Provider records</p>
@@ -194,7 +240,6 @@ export function FacilityDiscovery() {
               <FacilityCard
                 key={facility.id}
                 facility={facility}
-                crop={crop}
                 quantityKg={quantityKg}
                 harvestDate={harvestDate}
                 condition={condition}
@@ -203,7 +248,7 @@ export function FacilityDiscovery() {
                 recommended={facilityMatchesOutcome(facility, outcome)}
                 compared={comparedIds.includes(facility.id)}
                 onCompare={() => toggleComparison(facility.id)}
-                onRequest={() => setRequestFacility(facility)}
+                onReview={() => setSelectedFacilityId(facility.id)}
               />
             ))}
           </div>
@@ -218,28 +263,54 @@ export function FacilityDiscovery() {
         harvestDate={harvestDate}
         onClear={() => setComparedIds([])}
       />
+        </>
+      )}
 
-      {requestFacility && (
-        <div className="mt-8" id="service-request">
-          <FacilityRequestForm
-            facility={requestFacility}
-            crop={crop.trim()}
-            quantityKg={quantityKg}
-            location={location}
-            county={county}
-            harvestDate={harvestDate}
-            condition={condition}
-            intendedOutcome={outcome}
-            durationDays={days}
-            serviceStart={serviceStart}
-            onClose={() => setRequestFacility(null)}
+      {selectedFacility && (
+        <div className="mt-6" id="facility-review">
+          <FacilityDetails
+            facilityRecord={selectedFacility}
+            harvest={{
+              crop: crop.trim(),
+              quantityKg,
+              location,
+              county,
+              harvestDate,
+              condition,
+              intendedOutcome: outcome,
+              durationDays: days,
+              serviceStart,
+            }}
+            onBack={() => setSelectedFacilityId('')}
           />
         </div>
       )}
+        </>
+      ) : (
+        <FarmerFacilitySectionContent
+          section={activeSection}
+          onDiscover={() => {
+            setActiveSection('discover');
+            setSelectedFacilityId('');
+          }}
+        />
+      )}
+      </div>
 
       <div className="mt-8">
         <DemoNotice>Facility cards use database records. Any provider-marked demonstration data is labeled; availability, fees and conditions must be reconfirmed before service.</DemoNotice>
       </div>
     </div>
+  );
+}
+
+function Step({ number, label, active }: { number: string; label: string; active: boolean }) {
+  return (
+    <li className={`flex min-h-11 items-center gap-2 rounded-xl border px-3 ${
+      active ? 'border-[#FF5A1F] bg-[#FFF0EB] text-[#17191D]' : 'border-[#E2DED6] bg-white text-[#74767B]'
+    }`}>
+      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white text-[#FF5A1F]">{number}</span>
+      {label}
+    </li>
   );
 }

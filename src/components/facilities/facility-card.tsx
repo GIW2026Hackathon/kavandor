@@ -1,11 +1,9 @@
-import Link from 'next/link';
-import { ArrowUpRight, Check, GitCompare, MapPin, ShieldCheck } from 'lucide-react';
+import { Check, GitCompare, MapPin, ShieldCheck } from 'lucide-react';
 import type { Facility } from '@/types/facility';
 import { facilityCategory, facilityBenefit, formatFacilityPrice, getMatchingSlot, getServiceConditions } from '@/lib/facility-discovery';
 
 export function FacilityCard({
   facility,
-  crop,
   quantityKg,
   harvestDate,
   condition,
@@ -14,10 +12,9 @@ export function FacilityCard({
   recommended,
   compared,
   onCompare,
-  onRequest,
+  onReview,
 }: {
   facility: Facility;
-  crop: string;
   quantityKg: number;
   harvestDate: string;
   condition: string;
@@ -26,7 +23,7 @@ export function FacilityCard({
   recommended: boolean;
   compared: boolean;
   onCompare: () => void;
-  onRequest: () => void;
+  onReview: () => void;
 }) {
   const slot = getMatchingSlot(facility, serviceStart, durationDays, quantityKg, harvestDate);
   const listedCapacity = slot ?? facility.availabilitySlots.find((item) => item.availableCapacityKg > 0) ?? null;
@@ -88,12 +85,13 @@ export function FacilityCard({
       </div>
 
       <div className="mt-auto flex flex-wrap gap-2 pt-5">
-        <Link
-          href={`/storage/${facility.id}`}
-          className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-[#E2DED6] px-3 text-sm font-bold text-[#17191D] transition hover:bg-[#F6F3EC]"
+        <button
+          type="button"
+          onClick={onReview}
+          className="h-11 flex-1 rounded-xl bg-[#FF5A1F] px-4 text-sm font-bold text-white transition hover:bg-[#E44E18]"
         >
-          Facility details <ArrowUpRight size={16} />
-        </Link>
+          Review facility
+        </button>
         <button
           type="button"
           onClick={onCompare}
@@ -104,15 +102,6 @@ export function FacilityCard({
         >
           {compared ? <Check size={16} /> : <GitCompare size={16} />}
           Compare
-        </button>
-        <button
-          type="button"
-          onClick={onRequest}
-          disabled={!crop || quantityKg <= 0 || !slot}
-          title={!slot ? 'A capacity slot must cover the selected dates and quantity before a request can be submitted.' : undefined}
-          className="h-11 w-full rounded-xl bg-[#FF5A1F] px-4 text-sm font-bold text-white transition hover:bg-[#E44E18] disabled:cursor-not-allowed disabled:bg-[#E2DED6] disabled:text-[#74767B] sm:w-auto"
-        >
-          Request availability & quote
         </button>
       </div>
       {facility.verificationStatus === 'verified' && !facility.isDemo && (

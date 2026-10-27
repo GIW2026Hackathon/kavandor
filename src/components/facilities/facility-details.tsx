@@ -4,18 +4,43 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleHelp, MapPin, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DemoNotice } from '@/components/layout/app-shell-client';
-import { estimateServiceCost, facilityBenefit, facilityCategory, formatFacilityPrice, getMatchingSlot, getServiceConditions } from '@/lib/facility-discovery';
+import { FacilityRequestForm } from '@/components/facilities/facility-request-form';
+import { estimateServiceCost, facilityBenefit, facilityCategory, formatFacilityPrice, getMatchingSlot, getServiceConditions, normalizeCommodity } from '@/lib/facility-discovery';
 import { FacilitySchema, type Facility } from '@/types/facility';
 
-export function FacilityDetails({ facilityId }: { facilityId: string }) {
-  const [facility, setFacility] = useState<Facility | null>(null);
-  const [loading, setLoading] = useState(true);
+interface HarvestRequestContext {
+  crop: string;
+  quantityKg: number;
+  location: string;
+  county: string;
+  harvestDate: string;
+  condition: string;
+  intendedOutcome: string;
+  durationDays: number;
+  serviceStart: string;
+}
+
+export function FacilityDetails({
+  facilityId,
+  facilityRecord,
+  harvest,
+  onBack,
+}: {
+  facilityId?: string;
+  facilityRecord?: Facility;
+  harvest?: HarvestRequestContext;
+  onBack?: () => void;
+}) {
+  const [fetchedFacility, setFetchedFacility] = useState<Facility | null>(null);
+  const [loading, setLoading] = useState(!facilityRecord);
   const [error, setError] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [durationDays, setDurationDays] = useState(1);
-  const [serviceStart, setServiceStart] = useState('');
+  const [quantity, setQuantity] = useState(harvest ? String(harvest.quantityKg) : '');
+  const [durationDays, setDurationDays] = useState(harvest?.durationDays ?? 1);
+  const [serviceStart, setServiceStart] = useState(harvest?.serviceStart ?? '');
+  const facility = facilityRecord ?? fetchedFacility;
 
   useEffect(() => {
+    if (facilityRecord || !facilityId) return;
     const controller = new AbortController();
     const load = async () => {
       try {
@@ -24,7 +49,7 @@ export function FacilityDetails({ facilityId }: { facilityId: string }) {
         if (!response.ok) throw new Error(body.error?.message ?? 'Facility details could not be loaded.');
         const parsed = FacilitySchema.safeParse(body.facility);
         if (!parsed.success) throw new Error('Facility details were returned in an unsupported format.');
-        setFacility(parsed.data);
+        setFetchedFacility(parsed.data);
       } catch (reason) {
         if (reason instanceof Error && reason.name === 'AbortError') return;
         setError(reason instanceof Error ? reason.message : 'Facility details could not be loaded.');
@@ -34,7 +59,7 @@ export function FacilityDetails({ facilityId }: { facilityId: string }) {
     };
     void load();
     return () => controller.abort();
-  }, [facilityId]);
+  }, [facilityId, facilityRecord]);
 
   if (loading) {
     return <div className="mx-auto max-w-5xl px-4 py-10" aria-label="Loading facility details"><div className="h-96 animate-pulse rounded-2xl bg-[#E2DED6]/50" /></div>;
@@ -49,17 +74,38 @@ export function FacilityDetails({ facilityId }: { facilityId: string }) {
     );
   }
 
-  const quantityKg = Number(quantity);
-  const matchingSlot = getMatchingSlot(facility, serviceStart, durationDays, quantityKg);
-  const estimatedCost = estimateServiceCost(facility, quantityKg, durationDays);
+  const quantityKg = harvest?.quantityKg ?? Number(quantity);
+  const requestedDuration = harvest?.durationDays ?? durationDays;
+  const requestedStart = harvest?.serviceStart || serviceStart;
+  const harvestDate = harvest?.harvestDate ?? '';
+  const matchingSlot = getMatchingSlot(facility, requestedStart, requestedDuration, quantityKg, harvestDate);
+  const estimatedCost = estimateServiceCost(facility, quantityKg, requestedDuration);
   const benefit = facilityBenefit(facility);
   const conditions = getServiceConditions(facility);
+  const cropMatches = Boolean(
+    harvest?.crop &&
+    facility.acceptedCommodities.some((commodity) => normalizeCommodity(commodity) === normalizeCommodity(harvest.crop)),
+  );
+  const canRequest = Boolean(
+    harvest &&
+    cropMatches &&
+    harvest.location.trim() &&
+    harvest.county.trim() &&
+    harvest.harvestDate &&
+    matchingSlot,
+  );
 
   return (
     <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
-      <Link href="/storage" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#74767B] hover:text-[#17191D]">
-        <ArrowLeft size={17} /> All facilities
-      </Link>
+      {onBack ? (
+        <button type="button" onClick={onBack} className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#74767B] hover:text-[#17191D]">
+          <ArrowLeft size={17} /> Back to matching facilities
+        </button>
+      ) : (
+        <Link href="/storage" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#74767B] hover:text-[#17191D]">
+          <ArrowLeft size={17} /> All facilities
+        </Link>
+      )}
       <header className="mt-4 rounded-2xl bg-[#17191D] p-5 text-white shadow-md sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
@@ -104,11 +150,17 @@ export function FacilityDetails({ facilityId }: { facilityId: string }) {
             <div className="mt-5 rounded-xl border border-[#E2DED6] bg-[#F6F3EC] p-4">
               <h3 className="font-bold text-[#17191D]">Estimate a known service fee</h3>
               <p className="mt-1 text-xs leading-5 text-[#74767B]">Fee estimates are possible only when the provider lists a per-kg price. Transport and market returns are excluded.</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <Input label="Quantity (kg)" type="number" value={quantity} onChange={setQuantity} />
-                <Input label="Duration (days)" type="number" value={String(durationDays)} onChange={(value) => setDurationDays(Math.max(1, Number(value) || 1))} />
-                <Input label="Service start" type="date" value={serviceStart} onChange={setServiceStart} />
-              </div>
+              {harvest ? (
+                <p className="mt-3 text-sm text-[#17191D]">
+                  Estimate for {quantityKg > 0 ? `${quantityKg.toLocaleString()} kg over ${requestedDuration} day(s)` : 'your entered quantity and duration'}.
+                </p>
+              ) : (
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <Input label="Quantity (kg)" type="number" value={quantity} onChange={setQuantity} />
+                  <Input label="Duration (days)" type="number" value={String(durationDays)} onChange={(value) => setDurationDays(Math.max(1, Number(value) || 1))} />
+                  <Input label="Service start" type="date" value={serviceStart} onChange={setServiceStart} />
+                </div>
+              )}
               <dl className="mt-4 grid gap-3 border-t border-[#E2DED6] pt-4 sm:grid-cols-3">
                 <Detail label="Listed service fee" value={formatFacilityPrice(facility)} />
                 <Detail label="Estimated service cost" value={estimatedCost === null ? 'Cannot estimate from available price data' : `Est. KSh ${Math.round(estimatedCost).toLocaleString('en-KE')}`} />
@@ -143,9 +195,15 @@ export function FacilityDetails({ facilityId }: { facilityId: string }) {
                 A listed slot fits the entered quantity and dates. This is not a confirmed booking.
               </p>
             )}
-            <Link href={`/storage?facilityId=${encodeURIComponent(facility.id)}`} className="mt-5 flex min-h-12 items-center justify-between rounded-xl bg-[#FF5A1F] px-4 text-sm font-bold text-white transition hover:bg-[#E44E18]">
-              Request availability & quote <ArrowRight size={17} />
-            </Link>
+            {harvest ? (
+              <a href={canRequest ? '#facility-request' : '#harvest-details'} className="mt-5 flex min-h-12 items-center justify-between rounded-xl bg-[#FF5A1F] px-4 text-sm font-bold text-white transition hover:bg-[#E44E18]">
+                {canRequest ? 'Continue to service request' : 'Review harvest details and capacity'} <ArrowRight size={17} />
+              </a>
+            ) : (
+              <Link href={`/storage?facilityId=${encodeURIComponent(facility.id)}`} className="mt-5 flex min-h-12 items-center justify-between rounded-xl bg-[#FF5A1F] px-4 text-sm font-bold text-white transition hover:bg-[#E44E18]">
+                Continue in facility discovery <ArrowRight size={17} />
+              </Link>
+            )}
             <p className="mt-3 text-xs leading-5 text-[#74767B]">The request will be validated against crop compatibility and the live capacity ledger. A pending request is not provider confirmation.</p>
           </section>
 
@@ -156,6 +214,39 @@ export function FacilityDetails({ facilityId }: { facilityId: string }) {
           </section>
         </aside>
       </section>
+      {harvest && (
+        <section className="mt-7" id="facility-request" aria-labelledby="request-step-title">
+          <div className="mb-4">
+            <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#FF5A1F]">Step 3 · Take action</p>
+            <h2 id="request-step-title" className="mt-1 text-xl font-bold text-[#17191D]">Request this facility service</h2>
+          </div>
+          {canRequest ? (
+            <FacilityRequestForm
+              facility={facility}
+              crop={harvest.crop}
+              quantityKg={harvest.quantityKg}
+              location={harvest.location}
+              county={harvest.county}
+              harvestDate={harvest.harvestDate}
+              condition={harvest.condition}
+              intendedOutcome={harvest.intendedOutcome}
+              durationDays={harvest.durationDays}
+              serviceStart={harvest.serviceStart}
+              onClose={onBack ?? (() => undefined)}
+            />
+          ) : (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              {!harvest.crop
+                ? 'Enter a crop in your harvest details before requesting this service.'
+                : !cropMatches
+                  ? `This facility has not listed ${harvest.crop} as an accepted crop. Choose a compatible facility before requesting service.`
+                  : !harvest.quantityKg || !harvest.location.trim() || !harvest.county.trim() || !harvest.harvestDate
+                    ? 'Complete the harvest quantity, location, county and harvest date before requesting service.'
+                    : 'No listed capacity slot matches this quantity and service window. Choose another facility or update the requested dates; no request has been submitted.'}
+            </p>
+          )}
+        </section>
+      )}
       <div className="mt-7"><DemoNotice>Facility records are provider/database sourced. Missing availability, conditions, fees or market inputs are not estimated.</DemoNotice></div>
     </div>
   );
