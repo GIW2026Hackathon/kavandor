@@ -2,14 +2,26 @@ import { regionalProviders, type ServiceType, type ValueAdditionProvider } from 
 
 export type ValueAdditionPathwayType =
   | 'direct_sale'
+  | 'immediate_sale'
   | 'sorting_grading'
+  | 'grading_sorting'
   | 'processing'
   | 'drying'
   | 'aggregation'
   | 'dairy_chilling'
-  | 'cold_storage';
+  | 'cold_storage'
+  | 'storage'
+  | 'buyer_matching';
 
 export type SuitabilityTier = 'highly_recommended' | 'feasible' | 'requires_verification' | 'infeasible';
+
+export interface EvidenceModel {
+  visualObservations: string[];
+  farmerReportedFacts: string[];
+  verifiedProviderInfo: string[];
+  estimates: string[];
+  unknowns: string[];
+}
 
 export interface ValueAdditionPathway {
   type: ValueAdditionPathwayType;

@@ -43,7 +43,7 @@ export interface AssessmentRecord {
   defects: string[];
   limitations: string[];
   recommendations: Array<{
-    type: 'immediate_sale' | 'storage' | 'drying' | 'aggregation' | 'processing' | 'grading_sorting' | 'dairy_chilling' | 'buyer_matching';
+    type: 'immediate_sale' | 'direct_sale' | 'storage' | 'cold_storage' | 'drying' | 'aggregation' | 'processing' | 'grading_sorting' | 'sorting_grading' | 'dairy_chilling' | 'buyer_matching';
     label: string;
     description: string;
     estimatedNet?: number | null;

@@ -11,7 +11,7 @@ interface PathwayCardProps {
   isTopRecommendation?: boolean;
 }
 
-export function PathwayCard({ pathway, isTopRecommendation }: PathwayCardProps) {
+export function PathwayCard({ pathway, harvestId, isTopRecommendation }: PathwayCardProps) {
   const isHighlyRecommended = pathway.suitabilityTier === 'highly_recommended' || (pathway.suitabilityScore && pathway.suitabilityScore >= 85);
   const isRequiresVerification = pathway.suitabilityTier === 'requires_verification';
 

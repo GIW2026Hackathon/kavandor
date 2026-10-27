@@ -428,13 +428,14 @@ function SelectGroup({ label, value, onChange, groups }: { label: string; value:
     </label>
   );
 }
-function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TextArea({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
   return (
     <label className="grid gap-2 text-sm font-semibold text-[#17191D]">
       {label}
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         rows={4}
         className="resize-none rounded-xl border border-[#E2DED6] bg-white p-3 text-base font-normal text-[#17191D] outline-none transition focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F]"
       />

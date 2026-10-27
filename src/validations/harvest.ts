@@ -33,11 +33,14 @@ export const evidenceSchema = z.object({
 export const pathwayRecommendationSchema = z.object({
   type: z.enum([
     'immediate_sale',
+    'direct_sale',
     'storage',
+    'cold_storage',
     'drying',
     'aggregation',
     'processing',
     'grading_sorting',
+    'sorting_grading',
     'dairy_chilling',
     'buyer_matching',
   ]),

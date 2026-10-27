@@ -5,7 +5,7 @@ import { createAssessment } from '@/lib/server-backend';
 import { z } from 'zod';
 
 const clarifyPayloadSchema = z.object({
-  answers: z.record(z.string()),
+  answers: z.record(z.string(), z.string()),
 });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

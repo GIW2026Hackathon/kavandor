@@ -139,7 +139,7 @@ export function EvidenceBreakdown({ evidence, className = '' }: EvidenceBreakdow
 
               <ul className="mt-3 flex-1 space-y-1.5 pt-1">
                 {sec.items.length > 0 ? (
-                  sec.items.map((item, i) => (
+                  sec.items.map((item: string, i: number) => (
                     <li key={i} className="flex items-start gap-1.5 text-neutral-800 leading-4">
                       <span className="mt-1 size-1 rounded-full bg-neutral-400 shrink-0" />
                       <span>{item}</span>

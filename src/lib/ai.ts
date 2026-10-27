@@ -5,11 +5,14 @@ import { ValueAdditionEngine } from '@/lib/value-addition-engine';
 export const recommendationSchema = z.object({
   type: z.enum([
     'immediate_sale',
+    'direct_sale',
     'storage',
+    'cold_storage',
     'drying',
     'aggregation',
     'processing',
     'grading_sorting',
+    'sorting_grading',
     'dairy_chilling',
     'buyer_matching',
   ]),
