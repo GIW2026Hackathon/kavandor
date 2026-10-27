@@ -91,6 +91,10 @@ export interface HarvestAssessmentInput {
   clarificationAnswers?: Record<string, string>;
 }
 
+// In-memory cache for blazing fast local presentation and demo runs
+const assessmentCache = new Map<string, { result: AIAssessmentResult; expiresAt: number }>();
+let quotaExceededCooldownUntil = 0;
+
 export async function assessHarvest(input?: HarvestAssessmentInput): Promise<AIAssessmentResult> {
   const cropName = input?.crop?.trim() || 'Tomato';
   const quantity = input?.quantity && input.quantity > 0 ? input.quantity : 220;
@@ -99,15 +103,33 @@ export async function assessHarvest(input?: HarvestAssessmentInput): Promise<AIA
   const notes = input?.handlingNotes?.trim() || 'Standard harvest inspection.';
   const now = new Date().toISOString();
 
+  // Check in-memory cache for instant (<1ms) presentation delivery
+  const cacheKey = `${cropName.toLowerCase()}:${quantity}:${unit}:${location.toLowerCase()}:${JSON.stringify(input?.clarificationAnswers || {})}`;
+  const cached = assessmentCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.result;
+  }
+
   const apiKey =
     env.AI_PROVIDER_API_KEY ||
     env.GEMINI_API_KEY ||
     process.env.AI_PROVIDER_API_KEY ||
     process.env.GEMINI_API_KEY;
 
-  // If no AI key is configured, return calibrated deterministic agronomic assessment
-  if (!apiKey) {
-    return createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'kavandor-agronomic-engine', input?.clarificationAnswers);
+  const isFastDemo =
+    process.env.FAST_DEMO_AI === 'true' ||
+    process.env.NEXT_PUBLIC_FAST_DEMO === 'true';
+
+  // Fast-path: if offline mode, fast-demo mode, no key, or recent 429 quota exhaustion, return instant calibrated assessment
+  if (isFastDemo || !apiKey || Date.now() < quotaExceededCooldownUntil) {
+    const providerLabel = isFastDemo
+      ? 'kavandor-fast-presentation-engine'
+      : Date.now() < quotaExceededCooldownUntil
+        ? 'gemini-fallback-rate-limit-protection'
+        : 'kavandor-agronomic-engine';
+    const result = createDeterministicAssessment(cropName, quantity, unit, location, notes, now, providerLabel, input?.clarificationAnswers);
+    assessmentCache.set(cacheKey, { result, expiresAt: Date.now() + 10 * 60 * 1000 });
+    return result;
   }
 
   try {
@@ -130,7 +152,7 @@ export async function assessHarvest(input?: HarvestAssessmentInput): Promise<AIA
       }
     } else if (input?.photoUrl && (input.photoUrl.startsWith('http://') || input.photoUrl.startsWith('https://'))) {
       try {
-        const imgRes = await fetch(input.photoUrl, { signal: AbortSignal.timeout(8000) });
+        const imgRes = await fetch(input.photoUrl, { signal: AbortSignal.timeout(2500) });
         if (imgRes.ok) {
           const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
           const buffer = await imgRes.arrayBuffer();
@@ -218,11 +240,10 @@ Return ONLY a valid JSON object matching this schema:
 
     parts.push({ text: promptText.trim() });
 
+    // Streamlined active production Gemini models
     const CANDIDATE_MODELS = [
-      'gemini-3-flash-preview',
-      'gemini-3.5-flash',
       'gemini-2.5-flash',
-      'gemini-flash-latest',
+      'gemini-2.0-flash',
     ];
 
     let rawContent: string | null = null;
@@ -234,7 +255,7 @@ Return ONLY a valid JSON object matching this schema:
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
             method: 'POST',
-            signal: AbortSignal.timeout(8000),
+            signal: AbortSignal.timeout(3500),
             headers: {
               'Content-Type': 'application/json',
             },
@@ -247,6 +268,12 @@ Return ONLY a valid JSON object matching this schema:
             }),
           },
         );
+
+        if (response.status === 429) {
+          quotaExceededCooldownUntil = Date.now() + 120_000;
+          console.warn(`[KAVANDOR AI] Model ${model} returned HTTP 429: Quota exceeded. Activating fast presentation fallback.`);
+          break; // Stop immediately, do not hang on further models
+        }
 
         if (!response.ok) {
           console.warn(`[KAVANDOR AI] Model ${model} returned HTTP ${response.status}: ${response.statusText}. Trying next candidate.`);
@@ -267,8 +294,10 @@ Return ONLY a valid JSON object matching this schema:
     }
 
     if (!rawContent) {
-      console.warn('[KAVANDOR AI] All Gemini candidate models failed or returned empty content. Falling back to calibrated domain rules.');
-      return createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'gemini-fallback-all-models-failed', input?.clarificationAnswers);
+      console.warn('[KAVANDOR AI] Gemini unavailable or rate-limited. Falling back to calibrated domain rules.');
+      const fallbackResult = createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'gemini-fallback-all-models-failed', input?.clarificationAnswers);
+      assessmentCache.set(cacheKey, { result: fallbackResult, expiresAt: Date.now() + 10 * 60 * 1000 });
+      return fallbackResult;
     }
 
     const parsedJson = JSON.parse(rawContent);
@@ -293,10 +322,14 @@ Return ONLY a valid JSON object matching this schema:
       parsedJson.clarificationQuestions = engineResult.clarificationQuestions;
     }
 
-    return aiAssessmentSchema.parse(parsedJson);
+    const finalParsed = aiAssessmentSchema.parse(parsedJson);
+    assessmentCache.set(cacheKey, { result: finalParsed, expiresAt: Date.now() + 10 * 60 * 1000 });
+    return finalParsed;
   } catch (error) {
     console.error('[KAVANDOR AI] Error assessing harvest with Gemini:', error);
-    return createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'gemini-fallback-exception', input?.clarificationAnswers);
+    const errFallback = createDeterministicAssessment(cropName, quantity, unit, location, notes, now, 'gemini-fallback-exception', input?.clarificationAnswers);
+    assessmentCache.set(cacheKey, { result: errFallback, expiresAt: Date.now() + 10 * 60 * 1000 });
+    return errFallback;
   }
 }
 

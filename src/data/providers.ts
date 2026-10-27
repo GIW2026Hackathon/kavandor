@@ -193,7 +193,7 @@ export const regionalProviders: ValueAdditionProvider[] = [
     ],
   },
   {
-    id: 'p0000004-0000-0000-0000-000000000004',
+    id: 'f0000004-0000-0000-0000-000000000004',
     name: 'Nyakoe Agro-Processing & Pulping Center',
     providerType: 'processor',
     locality: 'Nyakoe',
@@ -256,7 +256,7 @@ export const regionalProviders: ValueAdditionProvider[] = [
     ],
   },
   {
-    id: 'p0000005-0000-0000-0000-000000000005',
+    id: 'f0000005-0000-0000-0000-000000000005',
     name: 'Manga Horticulture Farmers Cooperative',
     providerType: 'cooperative',
     locality: 'Manga',
@@ -298,7 +298,7 @@ export const regionalProviders: ValueAdditionProvider[] = [
     ],
   },
   {
-    id: 'p0000006-0000-0000-0000-000000000006',
+    id: 'f0000006-0000-0000-0000-000000000006',
     name: 'Nyamira Dairy Farmers Co-op Chilling Center',
     providerType: 'dairy_chilling',
     locality: 'Nyamira Town',
@@ -340,7 +340,7 @@ export const regionalProviders: ValueAdditionProvider[] = [
     ],
   },
   {
-    id: 'p0000007-0000-0000-0000-000000000007',
+    id: 'f0000007-0000-0000-0000-000000000007',
     name: 'Kisii Town Quality Packhouse & Grading Bay',
     providerType: 'packhouse',
     locality: 'Kisii Town',
@@ -382,7 +382,7 @@ export const regionalProviders: ValueAdditionProvider[] = [
     ],
   },
   {
-    id: 'p0000008-0000-0000-0000-000000000008',
+    id: 'f0000008-0000-0000-0000-000000000008',
     name: 'FreshLink Kisii Commercial Sourcing',
     providerType: 'commercial_buyer',
     locality: 'Kisii Town',
@@ -421,7 +421,7 @@ export const regionalProviders: ValueAdditionProvider[] = [
     ],
   },
   {
-    id: 'p0000009-0000-0000-0000-000000000009',
+    id: 'f0000009-0000-0000-0000-000000000009',
     name: 'Songa Mobility Fleet',
     providerType: 'transport_provider',
     locality: 'Kisii Transit Depot',
@@ -465,13 +465,20 @@ export const regionalProviders: ValueAdditionProvider[] = [
 ];
 
 export function findProvider(id: string): ValueAdditionProvider | undefined {
+  const normalized = id.replace(/^p/, 'f');
   const matchId: Record<string, string> = {
     'facility-01': 'f0000001-0000-0000-0000-000000000001',
     'facility-02': 'f0000002-0000-0000-0000-000000000002',
     'facility-03': 'f0000003-0000-0000-0000-000000000003',
+    'facility-04': 'f0000004-0000-0000-0000-000000000004',
+    'facility-05': 'f0000005-0000-0000-0000-000000000005',
+    'facility-06': 'f0000006-0000-0000-0000-000000000006',
+    'facility-07': 'f0000007-0000-0000-0000-000000000007',
+    'facility-08': 'f0000008-0000-0000-0000-000000000008',
+    'facility-09': 'f0000009-0000-0000-0000-000000000009',
   };
-  const targetId = matchId[id] || id;
-  return regionalProviders.find((p) => p.id === targetId || p.id === id);
+  const targetId = matchId[id] || matchId[normalized] || normalized;
+  return regionalProviders.find((p) => p.id === targetId || p.id === id || p.id === normalized);
 }
 
 export function searchProviders(filters: {

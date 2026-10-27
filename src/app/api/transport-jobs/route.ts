@@ -4,8 +4,8 @@ import { withAuthenticatedApi } from '@/lib/api-route';
 import { createTransportJob } from '@/lib/server-backend';
 
 export async function POST(request: Request) {
-  return withAuthenticatedApi(request, ['farmer'], async ({ supabase }) => {
-    const job = await createTransportJob(supabase, await readJson(request));
+  return withAuthenticatedApi(request, ['farmer'], async ({ supabase, actor }) => {
+    const job = await createTransportJob(supabase, await readJson(request), actor);
     return NextResponse.json({ transportRequest: job }, { status: 201 });
   });
 }

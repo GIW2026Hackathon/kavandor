@@ -111,7 +111,7 @@ export function StorageRequestWizard({
     try {
       const storagePayload = {
         harvestId: selectedHarvest.id,
-        facilityId: facility.id,
+        facilityId: facility.id.replace(/^p/, 'f'),
         requestedQuantity: Number(quantity),
         quantityUnit: 'kg',
         requestedStartAt: new Date(start).toISOString(),
@@ -128,7 +128,7 @@ export function StorageRequestWizard({
 
       if (!storageResponse.ok) {
         const errJson = await storageResponse.json().catch(() => ({}));
-        throw new Error(errJson.message || 'The storage reservation could not be submitted.');
+        throw new Error(errJson.error?.message || errJson.message || 'The storage reservation could not be submitted.');
       }
       
       const storage = await storageResponse.json();

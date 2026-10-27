@@ -4,8 +4,8 @@ import { withAuthenticatedApi } from '@/lib/api-route';
 import { reserveFacility } from '@/lib/server-backend';
 
 export async function POST(request: Request) {
-  return withAuthenticatedApi(request, ['farmer'], async ({ supabase }) => {
-    const reservation = await reserveFacility(supabase, await readJson(request));
+  return withAuthenticatedApi(request, ['farmer'], async ({ supabase, actor }) => {
+    const reservation = await reserveFacility(supabase, await readJson(request), actor);
     return NextResponse.json({ reservation }, { status: 201 });
   });
 }
