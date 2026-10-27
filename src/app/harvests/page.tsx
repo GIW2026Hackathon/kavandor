@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { Plus, Sprout } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { HarvestCard } from '@/components/dashboard/harvest-card';
@@ -9,6 +10,7 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 export const instant = false;
 
 export default async function HarvestsPage() {
+  await connection();
   let harvests: Array<{
     id: string;
     crop: string;

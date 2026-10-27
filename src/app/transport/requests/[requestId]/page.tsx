@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { Check } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 
@@ -13,6 +14,7 @@ const events = [
 ];
 
 export default async function TransportTrackingPage({ params }: { params: Promise<{ requestId: string }> }) {
+  await connection();
   const { requestId } = await params;
   return (
     <AppShell>

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { ArrowRight, Calendar, Warehouse } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { PageHeader } from '@/components/ui/page-header';
@@ -20,6 +21,7 @@ interface StorageReservationRow {
 }
 
 export default async function StorageRequestsPage() {
+  await connection();
   const admin = createSupabaseAdminClient();
   let reservations: StorageReservationRow[] = [];
 

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
@@ -40,6 +41,7 @@ interface TransportJobDetail {
 }
 
 export default async function StorageRequestDetailPage({ params }: { params: Promise<{ requestId: string }> }) {
+  await connection();
   const { requestId } = await params;
   const admin = createSupabaseAdminClient();
 
