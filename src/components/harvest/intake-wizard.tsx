@@ -95,8 +95,18 @@ export function IntakeWizard() {
   };
   const produceName = draft.crop === 'Other agricultural produce' ? draft.customProduce.trim() : draft.crop;
   const validate = () => {
-    if (step === 0 && (!produceName || Number(draft.quantity) <= 0)) return 'Choose a produce type and enter a quantity greater than zero.';
-    if (step === 2 && (!draft.location || !draft.county)) return 'Enter the farm or collection point and county.';
+    if (step === 0) {
+      if (produceName.length < 2) return 'Please choose or enter a valid produce name (at least 2 characters).';
+      const qty = Number(draft.quantity);
+      if (isNaN(qty) || qty <= 0) return 'Please enter a quantity greater than zero.';
+    }
+    if (step === 1 && !draft.harvestDate) {
+      return 'Please specify a harvest date.';
+    }
+    if (step === 2) {
+      if (draft.location.trim().length < 2) return 'Please enter the farm or collection point (at least 2 characters).';
+      if (!draft.county) return 'Please select a county.';
+    }
     return '';
   };
   const next = () => {
@@ -112,27 +122,40 @@ export function IntakeWizard() {
       let harvestId = createdHarvestId;
 
       if (!harvestId) {
-        const requestKey = idempotencyKey || crypto.randomUUID();
+        const safeHarvestDate = draft.harvestDate
+          ? new Date(`${draft.harvestDate}T${draft.harvestTime || '09:00'}:00`).toISOString()
+          : new Date().toISOString();
+
+        const requestKey = idempotencyKey || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : undefined);
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (requestKey) headers['Idempotency-Key'] = requestKey;
+
         const response = await fetch('/api/harvests', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': requestKey },
+          headers,
           body: JSON.stringify({
             crop: produceName,
-            variety: draft.variety,
-            quantity: Number(draft.quantity),
-            harvestDate: new Date(`${draft.harvestDate}T${draft.harvestTime}:00`).toISOString(),
+            variety: draft.variety || undefined,
+            quantity: Number(draft.quantity) || 1,
+            harvestDate: safeHarvestDate,
             unit: draft.unit,
-            handlingNotes: draft.handlingNotes,
-            availability: draft.availability,
-            location: draft.location,
-            county: draft.county,
+            handlingNotes: draft.handlingNotes || undefined,
+            availability: draft.availability || undefined,
+            location: draft.location.trim(),
+            county: draft.county || undefined,
             idempotencyKey: requestKey,
           }),
         });
         const result = await response.json();
         if (!response.ok) {
           setIdempotencyKey('');
-          throw new Error(result.error?.message ?? 'The harvest could not be saved.');
+          const fieldErrors = result.error?.issues?.fieldErrors as Record<string, string[]> | undefined;
+          const firstFieldError = fieldErrors ? Object.values(fieldErrors).flat()[0] : undefined;
+          const errDetail = result.error?.issues?.formErrors?.[0]
+            || firstFieldError
+            || result.error?.message
+            || 'The harvest could not be saved.';
+          throw new Error(errDetail);
         }
         harvestId = result.harvest.id;
         setCreatedHarvestId(harvestId);
