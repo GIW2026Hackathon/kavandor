@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { AppShell } from '@/components/layout/app-shell';
 import { findFacility } from '@/data/facilities';
 import { notFound } from 'next/navigation';
@@ -5,6 +6,7 @@ import { notFound } from 'next/navigation';
 export const instant = false;
 
 export default async function ConditionsPage({ params }: { params: Promise<{ facilityId: string }> }) {
+  await connection();
   const { facilityId } = await params;
   const facility = findFacility(facilityId);
   if (!facility) notFound();

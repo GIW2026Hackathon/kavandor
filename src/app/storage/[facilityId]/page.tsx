@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { ArrowRight, Droplets, Gauge, Info, ShieldAlert, Thermometer } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { findFacility } from '@/data/facilities';
@@ -7,6 +8,7 @@ import { findFacility } from '@/data/facilities';
 export const instant = false;
 
 export default async function FacilityDetailPage({ params }: { params: Promise<{ facilityId: string }> }) {
+  await connection();
   const { facilityId } = await params;
   const facility = findFacility(facilityId);
   if (!facility) {

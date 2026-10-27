@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { AppShell } from '@/components/layout/app-shell';
 import { PageHeader } from '@/components/ui/page-header';
 import { resolveAuthContext } from '@/lib/auth-server';
@@ -6,6 +7,7 @@ import { ShieldCheck, AlertCircle, Building2 } from 'lucide-react';
 export const instant = false;
 
 export default async function ProfilePage() {
+  await connection();
   const profile = await resolveAuthContext();
 
   return (
